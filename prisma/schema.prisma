@@ -1,0 +1,95 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  studentId   String?  @unique
+  faceData    String?  // Base64 encoded face template for 2FA
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  sessions    TrackingSession[]
+  
+  @@map("users")
+}
+
+model TrackingSession {
+  id            String    @id @default(cuid())
+  userId        String
+  sessionName   String?   // ชื่อการสอบ/เซสชัน
+  startTime     DateTime  @default(now())
+  endTime       DateTime?
+  totalDuration Int?      // milliseconds
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trackingLogs  TrackingLog[]
+  statistics    SessionStatistics?
+  
+  @@map("tracking_sessions")
+}
+
+model TrackingLog {
+  id              String          @id @default(cuid())
+  sessionId       String
+  detectionType   DetectionType
+  detectionData   Json            // Flexible JSON data for different detection types
+  confidence      Float?          // Confidence level (0-1)
+  
+  // Relations
+  session         TrackingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@map("tracking_logs")
+  @@index([sessionId])
+  @@index([detectionType])
+}
+
+enum DetectionType {
+  EYE_MOVEMENT
+  MOUTH_MOVEMENT
+  FACE_ORIENTATION
+  FACE_DETECTION_LOSS
+}
+
+model SessionStatistics {
+  id                    String   @id @default(cuid())
+  sessionId             String   @unique
+  
+  // Eye tracking stats
+  totalEyeMovements     Int      @default(0)
+  eyeMovementsByDirection Json   // {"LEFT": 10, "RIGHT": 15, "UP": 5, "DOWN": 8}
+  avgGazeDeviation      Float?
+  timeOffScreen         Int      @default(0) // milliseconds
+  
+  // Mouth tracking stats
+  totalMouthMovements   Int      @default(0)
+  mouthMovementDuration Int      @default(0) // milliseconds
+  speakingDetected      Int      @default(0)
+  
+  // Face tracking stats
+  faceDetectionLoss     Int      @default(0)
+  totalLossTime         Int      @default(0) // milliseconds
+  avgFaceOrientation    Json     // {"yaw": 0, "pitch": 0, "roll": 0}
+  
+  calculatedAt          DateTime @default(now())
+  
+  // Relations
+  session               TrackingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@map("session_statistics")
+}
+        
