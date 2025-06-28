@@ -59,10 +59,10 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
           </svg>
         </div>
         <h2 className="text-2xl font-bold text-gray-800">
-          {type === 'login' ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'}
+          {type === 'login' ? 'เข้าสู่ระบบ' : 'ลงทะเบียน'}
         </h2>
         <p className="text-gray-600 mt-2">
-          {type === 'login' ? 'ยินดีต้อนรับกลับ' : 'สร้างบัญชีใหม่เพื่อเริ่มต้นใช้งาน'}
+          {type === 'login' ? 'ยินดีต้อนรับ' : 'สร้างบัญชีใหม่เพื่อเริ่มต้นใช้งาน'}
         </p>
       </div>
 
@@ -142,7 +142,7 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
               กำลังดำเนินการ...
             </div>
           ) : (
-            type === 'login' ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'
+            type === 'login' ? 'เข้าสู่ระบบ' : 'ลงทะเบียน'
           )}
         </Button>
       </form>
@@ -154,7 +154,7 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
             href={type === 'login' ? '/register' : '/login'} 
             className="ml-2 text-purple-600 hover:text-purple-700 font-medium"
           >
-            {type === 'login' ? 'สมัครสมาชิก' : 'เข้าสู่ระบบ'}
+            {type === 'login' ? 'ลงทะเบียน' : 'เข้าสู่ระบบ'}
           </a>
         </p>
       </div>

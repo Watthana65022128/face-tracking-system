@@ -13,6 +13,7 @@
     "@supabase/supabase-js": "^2.50.2",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
+    "face-api.js": "^0.22.2",
     "jsonwebtoken": "^9.0.2",
     "next": "15.3.4",
     "react": "^19.0.0",
