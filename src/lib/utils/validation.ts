@@ -62,3 +62,17 @@ export function getPasswordStrengthColor(score: number): string {
   if (score <= 5) return 'bg-green-500'
   return 'bg-green-600'
 }
+
+export function validateName(name: string): { isValid: boolean; error?: string } {
+  if (!name || name.trim().length === 0) {
+    return { isValid: false, error: 'กรุณากรอกชื่อ' }
+  }
+  
+  // Check if name contains only Thai and English alphabetic characters and spaces
+  const nameRegex = /^[a-zA-Zก-๙\s]+$/
+  if (!nameRegex.test(name)) {
+    return { isValid: false, error: 'ชื่อและนามสกุลต้องเป็นตัวอักษรเท่านั้น' }
+  }
+  
+  return { isValid: true }
+}

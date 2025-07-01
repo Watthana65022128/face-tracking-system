@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { validateName } from '@/lib/utils/validation'
 
 export async function GET(request: NextRequest) {
   return NextResponse.redirect(new URL('/register', request.url))
@@ -25,6 +26,24 @@ export async function POST(request: NextRequest) {
           error: 'ข้อมูลไม่ครบถ้วน',
           details: 'กรุณากรอกอีเมล รหัสผ่าน ชื่อ และนามสกุล'
         },
+        { status: 400 }
+      )
+    }
+
+    // Validate first name
+    const firstNameValidation = validateName(firstName)
+    if (!firstNameValidation.isValid) {
+      return NextResponse.json(
+        { error: firstNameValidation.error },
+        { status: 400 }
+      )
+    }
+
+    // Validate last name
+    const lastNameValidation = validateName(lastName)
+    if (!lastNameValidation.isValid) {
+      return NextResponse.json(
+        { error: lastNameValidation.error },
         { status: 400 }
       )
     }
