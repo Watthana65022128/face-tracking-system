@@ -1,4 +1,3 @@
-// app/components/auth/FaceLogin.tsx
 'use client'
 import { useRef, useEffect, useState } from 'react'
 import { Button } from '@/app/components/ui/Button'

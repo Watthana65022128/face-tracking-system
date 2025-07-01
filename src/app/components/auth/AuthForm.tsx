@@ -28,6 +28,18 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
     
     // Validate password for registration
     if (type === 'register') {
+      // Validate first name - only letters allowed
+      if (!/^[a-zA-Zก-ฮ]+$/.test(formData.firstName)) {
+        setErrors({ firstName: 'ชื่อและนามสกุลต้องประกอบด้วยตัวอักษรเท่านั้น' })
+        return
+      }
+
+      // Validate last name - only letters allowed
+      if (!/^[a-zA-Zก-ฮ]+$/.test(formData.lastName)) {
+        setErrors({ lastName: 'ชื่อและนามสกุลต้องประกอบด้วยตัวอักษรเท่านั้น' })
+        return
+      }
+
       const passwordValidation = validatePassword(formData.password)
       if (!passwordValidation.isValid) {
         setErrors({ password: 'รหัสผ่านไม่ปลอดภัยเพียงพอ' })
@@ -88,10 +100,10 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
               />
             </div>
             <Input
-              label="รหัสนักศึกษา"
+              label="รหัสผู้เรียน"
               value={formData.studentId}
               onChange={handleChange('studentId')}
-              placeholder="รหัสนักศึกษา"
+              placeholder="650xxxx"
               error={errors.studentId}
             />
           </>
