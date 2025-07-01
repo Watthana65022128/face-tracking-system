@@ -184,7 +184,10 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
           </Button>
 
           <Button
-            onClick={onCancel}
+            onClick={() => {
+              stopCamera()
+              onCancel()
+            }}
             variant="secondary"
             className="w-full"
           >
