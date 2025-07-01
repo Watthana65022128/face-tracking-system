@@ -400,14 +400,6 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
         )}
       </div>
 
-      <div className="mt-6 text-center">
-        <button
-          onClick={() => (window.location.href = "/login")}
-          className="text-purple-600 hover:text-purple-700 text-sm font-medium"
-        >
-          ข้ามขั้นตอนนี้ (ไม่แนะนำ)
-        </button>
-      </div>
     </Card>
   );
 }

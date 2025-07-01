@@ -180,7 +180,7 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
                 กำลังตรวจสอบ...
               </div>
             ) : (
-              '🔍 ยืนยันตัวตน'
+              'ยืนยันตัวตน'
             )}
           </Button>
 

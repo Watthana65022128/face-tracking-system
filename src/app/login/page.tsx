@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { AuthForm } from '@/app/components/auth/AuthForm'
 import { FaceLogin } from '@/app/components/auth/FaceLogin'
+import toast from 'react-hot-toast'
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -27,19 +28,24 @@ export default function LoginPage() {
         // Step 1: Email/Password success - now verify face
         setCurrentUser(result.user)
         setShowFaceVerification(true)
+        toast.success(`ยินดีต้อนรับ ${result.user.firstName}! กรุณายืนยันตัวตนด้วยใบหน้า`)
       } else {
         // Handle different error cases
         if (response.status === 401) {
           setError('อีเมลหรือรหัสผ่านไม่ถูกต้อง')
         } else if (response.status === 404) {
           setError('ไม่พบบัญชีผู้ใช้นี้ กรุณาตรวจสอบอีเมล')
+          toast.error('ไม่พบบัญชีผู้ใช้นี้ กรุณาตรวจสอบอีเมล')
         } else {
           setError(result.error || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ')
+          toast.error(result.error || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ')
         }
       }
     } catch (error) {
       console.error('Login error:', error)
-      setError('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบอินเทอร์เน็ต')
+      const errorMsg = 'เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบอินเทอร์เน็ต'
+      setError(errorMsg)
+      toast.error(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -51,14 +57,18 @@ export default function LoginPage() {
       localStorage.setItem('user', JSON.stringify(currentUser))
       localStorage.setItem('token', 'verified') // หรือใช้ JWT token จริง
       
-      alert('เข้าสู่ระบบสำเร็จ!')
-      window.location.href = '/tracking'
+      toast.success('เข้าสู่ระบบสำเร็จ! กำลังเข้าสู่หน้าติดตาม...')
+      
+      setTimeout(() => {
+        window.location.href = '/tracking'
+      }, 1500)
     }
   }
 
   const handleFaceVerificationCancel = () => {
     setShowFaceVerification(false)
     setCurrentUser(null)
+    toast.error('การยืนยันตัวตนถูกยกเลิก กรุณาลองใหม่อีกครั้ง')
   }
 
   return (

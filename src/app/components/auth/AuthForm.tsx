@@ -102,7 +102,6 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
           type="email"
           value={formData.email}
           onChange={handleChange('email')}
-          placeholder="your@email.com"
           required
           error={errors.email}
         />
@@ -114,6 +113,7 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
           placeholder="••••••••"
           required
           showStrength={type === 'register'}
+          showToggle={true}
           error={errors.password}
         />
 
@@ -124,6 +124,8 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
             onChange={handleChange('confirmPassword')}
             placeholder="••••••••"
             required
+            showStrength={false}
+            showToggle={false} // ไม่แสดงปุ่ม toggle สำหรับช่องยืนยันรหัสผ่าน
             error={errors.confirmPassword}
           />
         )}

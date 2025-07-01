@@ -47,7 +47,6 @@ export default function FaceRegisterPage() {
         localStorage.removeItem('tempUserId')
         localStorage.removeItem('tempUser')
         
-        alert('ลงทะเบียนใบหน้าสำเร็จ! คุณสามารถเข้าสู่ระบบได้แล้ว')
         window.location.href = '/login'
         
       } else {

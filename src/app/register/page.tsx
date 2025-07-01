@@ -2,6 +2,7 @@
 'use client'
 import { useState } from 'react'
 import { AuthForm } from '@/app/components/auth/AuthForm'
+import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
@@ -37,19 +38,21 @@ export default function RegisterPage() {
           localStorage.setItem('tempUser', JSON.stringify(result.user))
         }
         
-        alert('สมัครสมาชิกสำเร็จ! กรุณาลงทะเบียนใบหน้าเพื่อเพิ่มความปลอดภัย')
+        toast.success('สมัครสมาชิกสำเร็จ! กรุณาลงทะเบียนใบหน้าเพื่อเพิ่มความปลอดภัย')
         
-        // Redirect ไปหน้าลงทะเบียนใบหน้า
-        window.location.href = '/face-register'
+        // Redirect ไปหน้าลงทะเบียนใบหน้าหลังจาก 2 วินาที
+        setTimeout(() => {
+          window.location.href = '/face-register'
+        }, 2000)
         
       } else {
         // มี error
-        alert(result.error || 'เกิดข้อผิดพลาด')
+        toast.error(result.error || 'เกิดข้อผิดพลาด')
       }
       
     } catch (error) {
       console.error('Registration error:', error)
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต')
+      toast.error('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต')
     } finally {
       setLoading(false)
     }
