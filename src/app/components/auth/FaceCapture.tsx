@@ -272,8 +272,8 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
         <ul className="text-sm text-purple-700 space-y-1">
           <li>• โปรดวางใบหน้าให้อยู่ในขอบเขต</li>
           <li>• โปรดมองตรงเข้ากล้อง</li>
-          <li>• โปรดหลีกเลี่ยงแสงและเงา</li>
-          <li>• โปรดถอดแว่นตา หน้ากาว หรืออื่นๆ</li>
+          <li>• โปรดหลีกเลี่ยงแสงและเงาที่มีผลกระทบการตรวจจับ</li>
+          <li>• โปรดถอดแว่นตา หน้ากาก และอุปกรณ์ปกปอดทุกชนิด</li>
         </ul>
       </div>
 
