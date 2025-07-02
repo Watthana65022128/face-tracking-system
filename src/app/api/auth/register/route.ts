@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
-import { validateName, validateEmail, validateStudentId, validatePassword, validateTitle } from '@/lib/utils/validation'
+import { validateName, validateEmail, validateStudentId, validatePassword, validateTitle, validatePhoneNumber } from '@/lib/utils/validation'
 
 export async function GET(request: NextRequest) {
   return NextResponse.redirect(new URL('/register', request.url))
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('Request body:', body)
     
-    const { email, password, title, firstName, lastName, studentId } = body
+    const { email, password, title, firstName, lastName, studentId, phoneNumber } = body
 
     // Validate required fields
     if (!email || !password || !title || !firstName || !lastName) {
@@ -63,6 +63,17 @@ export async function POST(request: NextRequest) {
       if (!studentIdValidation.isValid) {
         return NextResponse.json(
           { error: studentIdValidation.error },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Validate phone number if provided
+    if (phoneNumber) {
+      const phoneValidation = validatePhoneNumber(phoneNumber)
+      if (!phoneValidation.isValid) {
+        return NextResponse.json(
+          { error: phoneValidation.error },
           { status: 400 }
         )
       }
@@ -119,6 +130,7 @@ export async function POST(request: NextRequest) {
         firstName,
         lastName,
         studentId: studentId || null,
+        phoneNumber: phoneNumber || null,
         faceData: null // เพิ่มทีหลัง
       }
     })
@@ -135,7 +147,8 @@ export async function POST(request: NextRequest) {
         title: user.title,
         firstName: user.firstName,
         lastName: user.lastName,
-        studentId: user.studentId
+        studentId: user.studentId,
+        phoneNumber: user.phoneNumber
       }
     }, { status: 201 })
 

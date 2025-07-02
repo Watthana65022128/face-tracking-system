@@ -17,6 +17,7 @@ model User {
   firstName   String
   lastName    String
   studentId   String?  @unique
+  phoneNumber String?  // เบอร์โทรศัพท์
   faceData    String?  // Base64 encoded face template for 2FA
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())

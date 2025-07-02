@@ -158,6 +158,35 @@ export function validateTitle(title: string): { isValid: boolean; error?: string
   return { isValid: true }
 }
 
+export function validatePhoneNumber(phoneNumber: string): { isValid: boolean; error?: string } {
+  // Allow empty phone number (optional field)
+  if (!phoneNumber || phoneNumber.trim().length === 0) {
+    return { isValid: true }
+  }
+
+  const trimmedPhone = phoneNumber.trim()
+
+  // Check if contains only numbers
+  const numberRegex = /^[0-9]+$/
+  if (!numberRegex.test(trimmedPhone)) {
+    return { isValid: false, error: 'เบอร์โทรศัพท์ต้องเป็นตัวเลขเท่านั้น' }
+  }
+
+  // Check length (must be exactly 10 digits)
+  if (trimmedPhone.length !== 10) {
+    return { isValid: false, error: 'เบอร์โทรศัพท์ต้องมี 10 หลักเท่านั้น' }
+  }
+
+  // Check if starts with valid Thai mobile prefixes
+  const validPrefixes = ['08', '09', '06', '02']
+  const prefix = trimmedPhone.substring(0, 2)
+  if (!validPrefixes.includes(prefix)) {
+    return { isValid: false, error: 'เบอร์โทรศัพท์ไม่ถูกต้อง' }
+  }
+
+  return { isValid: true }
+}
+
 export function validateName(name: string): { isValid: boolean; error?: string } {
   if (!name || name.trim().length === 0) {
     return { isValid: false, error: 'กรุณากรอกชื่อ' }

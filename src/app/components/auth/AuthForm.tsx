@@ -5,7 +5,7 @@ import { Input } from "@/app/components/ui/Input";
 import { PasswordInput } from "@/app/components/ui/PasswordInput";
 import { Card } from "@/app/components/ui/Card";
 import { Select } from "@/app/components/ui/Select";
-import { validatePassword, validateName, validateEmail, validateStudentId, validateTitle } from "@/lib/utils/validation";
+import { validatePassword, validateName, validateEmail, validateStudentId, validateTitle, validatePhoneNumber } from "@/lib/utils/validation";
 
 interface AuthFormProps {
   type: "login" | "register";
@@ -22,6 +22,7 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
     firstName: "",
     lastName: "",
     studentId: "",
+    phoneNumber: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -60,6 +61,12 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
       const studentIdValidation = validateStudentId(formData.studentId);
       if (!studentIdValidation.isValid) {
         newErrors.studentId = studentIdValidation.error || "รหัสผู้เรียนไม่ถูกต้อง";
+      }
+
+      // Validate phone number
+      const phoneValidation = validatePhoneNumber(formData.phoneNumber);
+      if (!phoneValidation.isValid) {
+        newErrors.phoneNumber = phoneValidation.error || "เบอร์โทรศัพท์ไม่ถูกต้อง";
       }
 
       // Validate password
@@ -178,6 +185,13 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
               onChange={handleChange("studentId")}
               placeholder="650xxxx"
               error={errors.studentId}
+            />
+            <Input
+              label="เบอร์โทรศัพท์"
+              value={formData.phoneNumber}
+              onChange={handleChange("phoneNumber")}
+              placeholder="0812345678"
+              error={errors.phoneNumber}
             />
           </>
         )}
