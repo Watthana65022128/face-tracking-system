@@ -13,6 +13,7 @@ model User {
   id          String   @id @default(cuid())
   email       String   @unique
   password    String
+  title       String   // คำนำหน้าชื่อ: นาย, นาง, นางสาว
   firstName   String
   lastName    String
   studentId   String?  @unique

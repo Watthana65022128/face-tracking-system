@@ -141,6 +141,19 @@ export function validateStudentId(studentId: string): { isValid: boolean; error?
   return { isValid: true }
 }
 
+export function validateTitle(title: string): { isValid: boolean; error?: string } {
+  if (!title || title.trim().length === 0) {
+    return { isValid: false, error: 'กรุณาเลือกคำนำหน้าชื่อ' }
+  }
+
+  const validTitles = ['นาย', 'นาง', 'นางสาว']
+  if (!validTitles.includes(title.trim())) {
+    return { isValid: false, error: 'คำนำหน้าชื่อไม่ถูกต้อง' }
+  }
+
+  return { isValid: true }
+}
+
 export function validateName(name: string): { isValid: boolean; error?: string } {
   if (!name || name.trim().length === 0) {
     return { isValid: false, error: 'กรุณากรอกชื่อ' }

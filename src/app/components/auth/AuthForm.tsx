@@ -4,7 +4,8 @@ import { Button } from "@/app/components/ui/Button";
 import { Input } from "@/app/components/ui/Input";
 import { PasswordInput } from "@/app/components/ui/PasswordInput";
 import { Card } from "@/app/components/ui/Card";
-import { validatePassword, validateName, validateEmail, validateStudentId } from "@/lib/utils/validation";
+import { Select } from "@/app/components/ui/Select";
+import { validatePassword, validateName, validateEmail, validateStudentId, validateTitle } from "@/lib/utils/validation";
 
 interface AuthFormProps {
   type: "login" | "register";
@@ -17,6 +18,7 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
     email: "",
     password: "",
     confirmPassword: "",
+    title: "",
     firstName: "",
     lastName: "",
     studentId: "",
@@ -36,6 +38,12 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
 
     // Validate for registration
     if (type === "register") {
+      // Validate title
+      const titleValidation = validateTitle(formData.title);
+      if (!titleValidation.isValid) {
+        newErrors.title = titleValidation.error || "กรุณาเลือกคำนำหน้าชื่อ";
+      }
+
       // Validate first name
       const firstNameValidation = validateName(formData.firstName);
       if (!firstNameValidation.isValid) {
@@ -82,7 +90,7 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
   };
 
   const handleChange =
-    (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       setFormData((prev) => ({ ...prev, [field]: e.target.value }));
       if (errors[field]) {
         setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -120,6 +128,19 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
       <form onSubmit={handleSubmit} className="space-y-6">
         {type === "register" && (
           <>
+            <Select
+              label="คำนำหน้าชื่อ"
+              value={formData.title}
+              onChange={handleChange("title")}
+              placeholder="เลือกคำนำหน้าชื่อ"
+              required
+              error={errors.title}
+              options={[
+                { value: "นาย", label: "นาย" },
+                { value: "นาง", label: "นาง" },
+                { value: "นางสาว", label: "นางสาว" }
+              ]}
+            />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 label="ชื่อ"

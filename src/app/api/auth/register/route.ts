@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
-import { validateName, validateEmail, validateStudentId, validatePassword } from '@/lib/utils/validation'
+import { validateName, validateEmail, validateStudentId, validatePassword, validateTitle } from '@/lib/utils/validation'
 
 export async function GET(request: NextRequest) {
   return NextResponse.redirect(new URL('/register', request.url))
@@ -16,16 +16,25 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('Request body:', body)
     
-    const { email, password, firstName, lastName, studentId } = body
+    const { email, password, title, firstName, lastName, studentId } = body
 
     // Validate required fields
-    if (!email || !password || !firstName || !lastName) {
+    if (!email || !password || !title || !firstName || !lastName) {
       console.log('Missing required fields')
       return NextResponse.json(
         { 
           error: 'ข้อมูลไม่ครบถ้วน',
-          details: 'กรุณากรอกอีเมล รหัสผ่าน ชื่อ และนามสกุล'
+          details: 'กรุณากรอกอีเมล รหัสผ่าน คำนำหน้าชื่อ ชื่อ และนามสกุล'
         },
+        { status: 400 }
+      )
+    }
+
+    // Validate title
+    const titleValidation = validateTitle(title)
+    if (!titleValidation.isValid) {
+      return NextResponse.json(
+        { error: titleValidation.error },
         { status: 400 }
       )
     }
@@ -106,6 +115,7 @@ export async function POST(request: NextRequest) {
       data: {
         email: normalizedEmail,
         password: hashedPassword,
+        title,
         firstName,
         lastName,
         studentId: studentId || null,
@@ -122,6 +132,7 @@ export async function POST(request: NextRequest) {
       user: {
         id: user.id,
         email: user.email,
+        title: user.title,
         firstName: user.firstName,
         lastName: user.lastName,
         studentId: user.studentId
