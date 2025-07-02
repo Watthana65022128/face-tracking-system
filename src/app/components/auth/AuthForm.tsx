@@ -138,7 +138,20 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
               options={[
                 { value: "นาย", label: "นาย" },
                 { value: "นาง", label: "นาง" },
-                { value: "นางสาว", label: "นางสาว" }
+                { value: "นางสาว", label: "นางสาว" },
+                { value: "เด็กชาย", label: "เด็กชาย" },
+                { value: "เด็กหญิง", label: "เด็กหญิง" },
+                { value: "ดร.", label: "ดร." },
+                { value: "ศ.ดร.", label: "ศ.ดร." },
+                { value: "รศ.ดร.", label: "รศ.ดร." },
+                { value: "ผศ.ดร.", label: "ผศ.ดร." },
+                { value: "ศ.", label: "ศ." },
+                { value: "รศ.", label: "รศ." },
+                { value: "ผศ.", label: "ผศ." },
+                { value: "พระ", label: "พระ" },
+                { value: "แม่ชี", label: "แม่ชี" },
+                { value: "สามเณร", label: "สามเณร" },
+                { value: "สามเณรี", label: "สามเณรี" }
               ]}
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -146,7 +146,11 @@ export function validateTitle(title: string): { isValid: boolean; error?: string
     return { isValid: false, error: 'กรุณาเลือกคำนำหน้าชื่อ' }
   }
 
-  const validTitles = ['นาย', 'นาง', 'นางสาว']
+  const validTitles = [
+    'นาย', 'นาง', 'นางสาว', 'เด็กชาย', 'เด็กหญิง', 
+    'ดร.', 'ศ.ดร.', 'รศ.ดร.', 'ผศ.ดร.', 'ศ.', 'รศ.', 'ผศ.',
+    'พระ', 'แม่ชี', 'สามเณร', 'สามเณรี'
+  ]
   if (!validTitles.includes(title.trim())) {
     return { isValid: false, error: 'คำนำหน้าชื่อไม่ถูกต้อง' }
   }
