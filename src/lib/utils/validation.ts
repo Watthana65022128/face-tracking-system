@@ -63,6 +63,55 @@ export function getPasswordStrengthColor(score: number): string {
   return 'bg-green-600'
 }
 
+export function validateEmail(email: string): { isValid: boolean; error?: string } {
+  if (!email || email.trim().length === 0) {
+    return { isValid: false, error: 'กรุณากรอกอีเมล' }
+  }
+
+  // Remove whitespace
+  const trimmedEmail = email.trim()
+
+  // Check basic format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(trimmedEmail)) {
+    return { isValid: false, error: 'รูปแบบอีเมลไม่ถูกต้อง' }
+  }
+
+  // Check for common invalid patterns
+  if (trimmedEmail.includes('..') || 
+      trimmedEmail.startsWith('.') || 
+      trimmedEmail.endsWith('.') ||
+      trimmedEmail.includes('@.') ||
+      trimmedEmail.includes('.@')) {
+    return { isValid: false, error: 'รูปแบบอีเมลไม่ถูกต้อง' }
+  }
+
+  // Check length constraints
+  if (trimmedEmail.length > 254) {
+    return { isValid: false, error: 'อีเมลยาวเกินไป' }
+  }
+
+  const [localPart, domain] = trimmedEmail.split('@')
+  
+  // Check local part length
+  if (localPart.length > 64) {
+    return { isValid: false, error: 'ส่วนหน้า @ ของอีเมลยาวเกินไป' }
+  }
+
+  // Check domain part
+  if (domain.length > 253) {
+    return { isValid: false, error: 'ส่วนหลัง @ ของอีเมลยาวเกินไป' }
+  }
+
+  // Check for valid domain format
+  const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+  if (!domainRegex.test(domain)) {
+    return { isValid: false, error: 'โดเมนของอีเมลไม่ถูกต้อง' }
+  }
+
+  return { isValid: true }
+}
+
 export function validateName(name: string): { isValid: boolean; error?: string } {
   if (!name || name.trim().length === 0) {
     return { isValid: false, error: 'กรุณากรอกชื่อ' }

@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
-import { validateName } from '@/lib/utils/validation'
+import { validateName, validateEmail } from '@/lib/utils/validation'
 
 export async function GET(request: NextRequest) {
   return NextResponse.redirect(new URL('/register', request.url))
@@ -49,10 +49,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
+    const emailValidation = validateEmail(email)
+    if (!emailValidation.isValid) {
       return NextResponse.json(
-        { error: 'รูปแบบอีเมลไม่ถูกต้อง' },
+        { error: emailValidation.error },
         { status: 400 }
       )
     }

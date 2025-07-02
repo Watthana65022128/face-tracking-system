@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { validateEmail } from '@/lib/utils/validation'
 
 export async function GET(request: NextRequest) {
   // ส่งกลับไปที่หน้าเข้าสู่ระบบ
@@ -12,9 +13,18 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
 
+    // Validate email format
+    const emailValidation = validateEmail(email)
+    if (!emailValidation.isValid) {
+      return NextResponse.json(
+        { error: emailValidation.error },
+        { status: 400 }
+      )
+    }
+
     // Find user
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email: email.toLowerCase() }
     })
 
     if (!user) {

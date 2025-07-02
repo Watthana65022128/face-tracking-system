@@ -4,7 +4,7 @@ import { Button } from "@/app/components/ui/Button";
 import { Input } from "@/app/components/ui/Input";
 import { PasswordInput } from "@/app/components/ui/PasswordInput";
 import { Card } from "@/app/components/ui/Card";
-import { validatePassword, validateName } from "@/lib/utils/validation";
+import { validatePassword, validateName, validateEmail } from "@/lib/utils/validation";
 
 interface AuthFormProps {
   type: "login" | "register";
@@ -26,10 +26,16 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const newErrors: Record<string, string> = {};
+
+    // Validate email for both login and register
+    const emailValidation = validateEmail(formData.email);
+    if (!emailValidation.isValid) {
+      newErrors.email = emailValidation.error || "อีเมลไม่ถูกต้อง";
+    }
+
     // Validate for registration
     if (type === "register") {
-      const newErrors: Record<string, string> = {};
-
       // Validate first name
       const firstNameValidation = validateName(formData.firstName);
       if (!firstNameValidation.isValid) {
@@ -52,12 +58,12 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
       if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = "รหัสผ่านไม่ตรงกัน";
       }
+    }
 
-      // If there are any errors, show them and stop submission
-      if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors);
-        return;
-      }
+    // If there are any errors, show them and stop submission
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
     }
 
     onSubmit(formData);
