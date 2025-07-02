@@ -1,4 +1,3 @@
-// app/login/page.tsx - Updated with Face Verification
 'use client'
 import { useState } from 'react'
 import { AuthForm } from '@/app/components/auth/AuthForm'

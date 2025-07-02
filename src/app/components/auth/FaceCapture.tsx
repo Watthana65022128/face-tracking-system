@@ -164,9 +164,6 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
           </svg>
         </div>
         <h2 className="text-2xl font-bold text-gray-800">ลงทะเบียนใบหน้า</h2>
-        <p className="text-gray-600 mt-2">
-          กรุณาเพิ่มข้อมูลใบหน้าเพื่อเพิ่มความปลอดภัยในการเข้าสู่ระบบ
-        </p>
       </div>
 
       {isModelLoading && (
@@ -273,10 +270,10 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
       <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
         <h3 className="font-medium text-purple-800 mb-2">คำแนะนำ:</h3>
         <ul className="text-sm text-purple-700 space-y-1">
-          <li>• วางใบหน้าให้อยู่ในวงกลม</li>
-          <li>• มองตรงเข้ากล้อง</li>
-          <li>• หลีกเลี่ยงแสงแกลบและเงา</li>
-          <li>• ถอดแว่นตา หากเป็นไปได้</li>
+          <li>• โปรดวางใบหน้าให้อยู่ในขอบเขต</li>
+          <li>• โปรดมองตรงเข้ากล้อง</li>
+          <li>• โปรดหลีกเลี่ยงแสงและเงา</li>
+          <li>• โปรดถอดแว่นตา หน้ากาว หรืออื่นๆ</li>
         </ul>
       </div>
 

@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
 
-    // Validate email format
+    // Validate email format and get normalized email
     const emailValidation = validateEmail(email)
     if (!emailValidation.isValid) {
       return NextResponse.json(
@@ -21,15 +21,17 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    
+    const normalizedEmail = emailValidation.normalizedEmail!
 
     // Find user
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
+      where: { email: normalizedEmail }
     })
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Invalid credentials' },
+        { error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' },
         { status: 401 }
       )
     }
@@ -39,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     if (!isPasswordValid) {
       return NextResponse.json(
-        { error: 'Invalid credentials' },
+        { error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' },
         { status: 401 }
       )
     }
@@ -62,7 +64,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์' },
       { status: 500 }
     )
   }

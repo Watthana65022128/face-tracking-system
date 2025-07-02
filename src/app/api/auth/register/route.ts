@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
-import { validateName, validateEmail, validateStudentId } from '@/lib/utils/validation'
+import { validateName, validateEmail, validateStudentId, validatePassword } from '@/lib/utils/validation'
 
 export async function GET(request: NextRequest) {
   return NextResponse.redirect(new URL('/register', request.url))
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate email format
+    // Validate email format and get normalized email
     const emailValidation = validateEmail(email)
     if (!emailValidation.isValid) {
       return NextResponse.json(
@@ -67,11 +67,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    
+    const normalizedEmail = emailValidation.normalizedEmail!
 
-    // Validate password strength
-    if (password.length < 8) {
+    // Validate password strength using the comprehensive validation function
+    const passwordValidation = validatePassword(password)
+    if (!passwordValidation.isValid) {
       return NextResponse.json(
-        { error: 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร' },
+        { error: 'รหัสผ่านไม่ปลอดภัยเพียงพอ', details: passwordValidation.feedback },
         { status: 400 }
       )
     }
@@ -80,7 +83,7 @@ export async function POST(request: NextRequest) {
     
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
+      where: { email: normalizedEmail }
     })
 
     if (existingUser) {
@@ -101,7 +104,7 @@ export async function POST(request: NextRequest) {
     // Create user
     const user = await prisma.user.create({
       data: {
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         password: hashedPassword,
         firstName,
         lastName,

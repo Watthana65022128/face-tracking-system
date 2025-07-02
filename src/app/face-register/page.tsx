@@ -1,4 +1,3 @@
-// app/face-register/page.tsx
 'use client'
 import { useState, useEffect } from 'react'
 import { FaceCapture } from '@/app/components/auth/FaceCapture'

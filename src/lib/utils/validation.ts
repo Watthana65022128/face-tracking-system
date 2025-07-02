@@ -63,35 +63,35 @@ export function getPasswordStrengthColor(score: number): string {
   return 'bg-green-600'
 }
 
-export function validateEmail(email: string): { isValid: boolean; error?: string } {
+export function validateEmail(email: string): { isValid: boolean; error?: string; normalizedEmail?: string } {
   if (!email || email.trim().length === 0) {
     return { isValid: false, error: 'กรุณากรอกอีเมล' }
   }
 
-  // Remove whitespace
-  const trimmedEmail = email.trim()
+  // Normalize email: trim and convert to lowercase
+  const normalizedEmail = email.trim().toLowerCase()
 
   // Check basic format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(trimmedEmail)) {
+  if (!emailRegex.test(normalizedEmail)) {
     return { isValid: false, error: 'รูปแบบอีเมลไม่ถูกต้อง' }
   }
 
   // Check for common invalid patterns
-  if (trimmedEmail.includes('..') || 
-      trimmedEmail.startsWith('.') || 
-      trimmedEmail.endsWith('.') ||
-      trimmedEmail.includes('@.') ||
-      trimmedEmail.includes('.@')) {
+  if (normalizedEmail.includes('..') || 
+      normalizedEmail.startsWith('.') || 
+      normalizedEmail.endsWith('.') ||
+      normalizedEmail.includes('@.') ||
+      normalizedEmail.includes('.@')) {
     return { isValid: false, error: 'รูปแบบอีเมลไม่ถูกต้อง' }
   }
 
   // Check length constraints
-  if (trimmedEmail.length > 254) {
+  if (normalizedEmail.length > 254) {
     return { isValid: false, error: 'อีเมลยาวเกินไป' }
   }
 
-  const [localPart, domain] = trimmedEmail.split('@')
+  const [localPart, domain] = normalizedEmail.split('@')
   
   // Check local part length
   if (localPart.length > 64) {
@@ -103,13 +103,20 @@ export function validateEmail(email: string): { isValid: boolean; error?: string
     return { isValid: false, error: 'ส่วนหลัง @ ของอีเมลยาวเกินไป' }
   }
 
-  // Check for valid domain format
+  // Check for valid domain format with minimum TLD length
   const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
   if (!domainRegex.test(domain)) {
     return { isValid: false, error: 'โดเมนของอีเมลไม่ถูกต้อง' }
   }
 
-  return { isValid: true }
+  // Check for minimum TLD length (at least 2 characters)
+  const domainParts = domain.split('.')
+  const tld = domainParts[domainParts.length - 1]
+  if (tld.length < 2) {
+    return { isValid: false, error: 'โดเมนของอีเมลไม่ถูกต้อง' }
+  }
+
+  return { isValid: true, normalizedEmail }
 }
 
 export function validateStudentId(studentId: string): { isValid: boolean; error?: string } {

@@ -72,7 +72,13 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
       return;
     }
 
-    onSubmit(formData);
+    // Use normalized email for submission if validation passed
+    const submitData = { ...formData };
+    if (emailValidation.normalizedEmail) {
+      submitData.email = emailValidation.normalizedEmail;
+    }
+
+    onSubmit(submitData);
   };
 
   const handleChange =
