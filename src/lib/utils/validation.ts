@@ -112,6 +112,28 @@ export function validateEmail(email: string): { isValid: boolean; error?: string
   return { isValid: true }
 }
 
+export function validateStudentId(studentId: string): { isValid: boolean; error?: string } {
+  // Allow empty student ID (optional field)
+  if (!studentId || studentId.trim().length === 0) {
+    return { isValid: true }
+  }
+
+  const trimmedId = studentId.trim()
+
+  // Check if contains only numbers
+  const numberRegex = /^[0-9]+$/
+  if (!numberRegex.test(trimmedId)) {
+    return { isValid: false, error: 'รหัสผู้เรียนต้องเป็นตัวเลขเท่านั้น' }
+  }
+
+  // Check length (typically 7 digits for student ID)
+  if (trimmedId.length < 6 || trimmedId.length > 10) {
+    return { isValid: false, error: 'รหัสผู้เรียนต้องมี 6-10 หลัก' }
+  }
+
+  return { isValid: true }
+}
+
 export function validateName(name: string): { isValid: boolean; error?: string } {
   if (!name || name.trim().length === 0) {
     return { isValid: false, error: 'กรุณากรอกชื่อ' }

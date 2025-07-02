@@ -4,7 +4,7 @@ import { Button } from "@/app/components/ui/Button";
 import { Input } from "@/app/components/ui/Input";
 import { PasswordInput } from "@/app/components/ui/PasswordInput";
 import { Card } from "@/app/components/ui/Card";
-import { validatePassword, validateName, validateEmail } from "@/lib/utils/validation";
+import { validatePassword, validateName, validateEmail, validateStudentId } from "@/lib/utils/validation";
 
 interface AuthFormProps {
   type: "login" | "register";
@@ -46,6 +46,12 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
       const lastNameValidation = validateName(formData.lastName);
       if (!lastNameValidation.isValid) {
         newErrors.lastName = lastNameValidation.error || "นามสกุลไม่ถูกต้อง";
+      }
+
+      // Validate student ID
+      const studentIdValidation = validateStudentId(formData.studentId);
+      if (!studentIdValidation.isValid) {
+        newErrors.studentId = studentIdValidation.error || "รหัสผู้เรียนไม่ถูกต้อง";
       }
 
       // Validate password

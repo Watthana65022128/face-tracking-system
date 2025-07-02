@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
-import { validateName, validateEmail } from '@/lib/utils/validation'
+import { validateName, validateEmail, validateStudentId } from '@/lib/utils/validation'
 
 export async function GET(request: NextRequest) {
   return NextResponse.redirect(new URL('/register', request.url))
@@ -46,6 +46,17 @@ export async function POST(request: NextRequest) {
         { error: lastNameValidation.error },
         { status: 400 }
       )
+    }
+
+    // Validate student ID if provided
+    if (studentId) {
+      const studentIdValidation = validateStudentId(studentId)
+      if (!studentIdValidation.isValid) {
+        return NextResponse.json(
+          { error: studentIdValidation.error },
+          { status: 400 }
+        )
+      }
     }
 
     // Validate email format
