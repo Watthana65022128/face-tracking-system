@@ -27,7 +27,7 @@ export default function LoginPage() {
         // Step 1: Email/Password success - now verify face
         setCurrentUser(result.user)
         setShowFaceVerification(true)
-        toast.success(`ยินดีต้อนรับ ${result.user.firstName}! กรุณายืนยันตัวตนด้วยใบหน้า`)
+        toast.success(`ยินดีต้อนรับคุณ ${result.user.firstName} กรุณายืนยันตัวตนด้วยใบหน้า`)
       } else {
         // Handle different error cases
         if (response.status === 401) {
@@ -56,7 +56,7 @@ export default function LoginPage() {
       localStorage.setItem('user', JSON.stringify(currentUser))
       localStorage.setItem('token', 'verified') // หรือใช้ JWT token จริง
       
-      toast.success('เข้าสู่ระบบสำเร็จ! กำลังเข้าสู่หน้าติดตาม...')
+      toast.success('เข้าสู่ระบบสำเร็จ')
       
       setTimeout(() => {
         window.location.href = '/tracking'

@@ -1,4 +1,3 @@
-// app/register/page.tsx
 'use client'
 import { useState } from 'react'
 import { AuthForm } from '@/app/components/auth/AuthForm'
@@ -40,7 +39,7 @@ export default function RegisterPage() {
           localStorage.setItem('tempUser', JSON.stringify(result.user))
         }
         
-        toast.success('สมัครสมาชิกสำเร็จ! กรุณาลงทะเบียนใบหน้าเพื่อเพิ่มความปลอดภัย')
+        toast.success('สมัครสมาชิกสำเร็จ กรุณาลงทะเบียนใบหน้าเพื่อเพิ่มความปลอดภัย')
         
         // Redirect ไปหน้าลงทะเบียนใบหน้าหลังจาก 2 วินาที
         setTimeout(() => {

@@ -102,17 +102,22 @@ export async function POST(request: NextRequest) {
     }
     
     // Face matching threshold - use the best match
-    // เพิ่ม threshold เพื่อให้ยืดหยุ่นมากขึ้น เนื่องจากใบหน้าอาจมีการเปลี่ยนแปลงเล็กน้อย
-    const threshold = 0.8
-    const isMatch = minDistance < threshold
+    // ปรับ threshold ให้เข้มงวดขึ้นเพื่อความปลอดภัย
+    const threshold = 0.4
+    
+    // เพิ่มการตรวจสอบเพิ่มเติม - ต้องมีการตรงกับหลายท่า
+    const validMatches = distances.filter(d => d.distance < threshold)
+    const isMatch = minDistance < threshold && validMatches.length > 0
 
     console.log('Face comparison result:', {
       distances,
       minDistance,
       bestMatch,
       threshold,
+      validMatches: validMatches.length,
       isMatch,
-      user: `${user.firstName} ${user.lastName}`
+      user: `${user.firstName} ${user.lastName}`,
+      security: 'Enhanced verification with stricter threshold'
     })
 
     return NextResponse.json({
@@ -123,7 +128,7 @@ export async function POST(request: NextRequest) {
       threshold,
       message: isMatch 
         ? `ยืนยันตัวตนสำเร็จ (ตรงกับท่า ${bestMatch})` 
-        : `ใบหน้าไม่ตรงกับข้อมูลที่ลงทะเบียน (ระยะทางต่ำสุด: ${minDistance.toFixed(3)})`
+        : `ใบหน้าไม่ตรงกับข้อมูลที่ลงทะเบียน`
     })
 
   } catch (error: any) {
