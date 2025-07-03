@@ -28,10 +28,6 @@ export function PoseInstructions({
 }: PoseInstructionsProps) {
   return (
     <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-      <h3 className="font-medium text-purple-800 mb-2 flex items-center">
-        <span className="text-2xl mr-2">{currentPose.icon}</span>
-        ท่าที่ {currentPoseIndex + 1}: {currentPose.title}
-      </h3>
       <p className="text-purple-700 text-lg font-medium mb-3">{currentPose.instruction}</p>
       
       {/* Pose Progress */}
@@ -57,22 +53,11 @@ export function PoseInstructions({
       
       {/* General Instructions */}
       <div className="text-sm text-purple-600 space-y-1">
+        <p>คำแนะนำ</p>
         <p>• โปรดวางใบหน้าให้อยู่ในขอบเขต</p>
-        <p>• โปรดหลีกเลี่ยงแสงและเงาที่มีผลกระทบการตรวจจับ</p>
+        <p>• โปรดหลีกเลี่ยงแสงและเงาที่มีผลกระทบต่อการตรวจจับ</p>
         <p>• โปรดถอดแว่นตา หน้ากาก และอุปกรณ์ปกปิดทุกชนิด</p>
         <p>• โปรดทำตามคำแนะนำ - ระบบจะถ่ายภาพอัตโนมัติ</p>
-        
-        {/* Real-time feedback */}
-        {!isAllPosesComplete && (
-          <div className="mt-3 p-2 bg-purple-100 rounded border-l-4 border-purple-400">
-            <p className="font-medium">สถานะปัจจุบัน:</p>
-            <p className="text-xs">
-              ตรวจพบ: {currentDetectedPose === 'unknown' ? 'ไม่พบใบหน้า' : currentDetectedPose} |
-              ความมั่นใจ: {Math.round(poseConfidence * 100)}%
-              {currentPose.type === 'blink' && ` | กระพริบ: ${isBlinking ? 'ใช่' : 'ไม่'}`}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -39,15 +39,6 @@ export function CaptureStatus({
             บันทึกข้อมูลใบหน้าทั้ง {capturedPosesCount}เรียบร้อยแล้ว
           </p>
         </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Button onClick={onRetake} variant="secondary" disabled={loading}>
-            ถ่ายใหม่
-          </Button>
-          <Button onClick={onGoToLogin} disabled={loading}>
-            เข้าสู่ระบบ
-          </Button>
-        </div>
       </div>
     );
   }

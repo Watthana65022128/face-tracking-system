@@ -57,7 +57,7 @@ export function StatusIndicators({
                 ? 'bg-green-500'
                 : 'bg-yellow-500'
             }`} />
-            <span>{currentDetectedPose === currentPoseType || (currentPoseType === 'blink' && isBlinking) ? 'ถูกต้อง' : 'ผิดท่า'}</span>
+            <span>{currentDetectedPose === currentPoseType || (currentPoseType === 'blink' && isBlinking) ? 'ถูกต้อง' : 'ไม่ถูกต้อง'}</span>
           </div>
         )}
       </div>
