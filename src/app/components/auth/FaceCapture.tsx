@@ -245,13 +245,6 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
     setPoseConfidence(0);
   };
   
-  const handleSkipPose = () => {
-    if (currentPoseIndex < poses.length - 1) {
-      setCurrentPoseIndex(prev => prev + 1);
-      setPoseProgress(0);
-      setPoseStableCount(0);
-    }
-  };
 
   const handleGoToLogin = () => {
     window.location.href = "/login";
@@ -328,7 +321,6 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
         currentPoseTitle={currentPose.title}
         poseStableCount={poseStableCount}
         capturedPosesCount={Object.keys(capturedPoses).length}
-        onSkip={handleSkipPose}
         onRetake={handleRetake}
         onGoToLogin={handleGoToLogin}
       />

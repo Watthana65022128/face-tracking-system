@@ -10,7 +10,6 @@ interface CaptureStatusProps {
   currentPoseTitle: string;
   poseStableCount: number;
   capturedPosesCount: number;
-  onSkip: () => void;
   onRetake: () => void;
   onGoToLogin: () => void;
 }
@@ -25,7 +24,6 @@ export function CaptureStatus({
   currentPoseTitle,
   poseStableCount,
   capturedPosesCount,
-  onSkip,
   onRetake,
   onGoToLogin
 }: CaptureStatusProps) {
@@ -86,18 +84,6 @@ export function CaptureStatus({
           </div>
         )}
       </div>
-      
-      {/* Skip Button - only show when waiting */}
-      {!isCapturingPose && !loading && (
-        <Button
-          onClick={onSkip}
-          variant="secondary"
-          disabled={isModelLoading}
-          className="w-full"
-        >
-          ข้ามท่านี้
-        </Button>
-      )}
     </div>
   );
 }

@@ -58,9 +58,9 @@ export function PoseInstructions({
       {/* General Instructions */}
       <div className="text-sm text-purple-600 space-y-1">
         <p>• โปรดวางใบหน้าให้อยู่ในขอบเขต</p>
-        <p>• โปรดทำตามคำแนะนำ - ระบบจะถ่ายภาพอัตโนมัติ</p>
         <p>• โปรดหลีกเลี่ยงแสงและเงาที่มีผลกระทบการตรวจจับ</p>
         <p>• โปรดถอดแว่นตา หน้ากาก และอุปกรณ์ปกปิดทุกชนิด</p>
+        <p>• โปรดทำตามคำแนะนำ - ระบบจะถ่ายภาพอัตโนมัติ</p>
         
         {/* Real-time feedback */}
         {!isAllPosesComplete && (

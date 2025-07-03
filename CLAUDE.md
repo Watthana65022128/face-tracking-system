@@ -29,15 +29,21 @@ This is a Next.js 15 tracking system with face recognition authentication and be
 ## Current Implementation Status
 
 **✅ Completed Features:**
-- User registration with face biometric data capture
-- JWT-based authentication system
-- Face recognition login and registration
-- Real-time face detection and capture
+- User registration with multi-pose face biometric data capture (4 poses: front, left, right, blink)
+- JWT-based authentication system with automatic duplicate field validation
+- Face recognition login and registration with multi-pose verification
+- Real-time automatic face detection and capture system without manual buttons
+- Eye Aspect Ratio (EAR) algorithm for accurate blink detection using facial landmarks
 - Password-based authentication fallback
 - User profile management with Thai localization
+- Real-time duplicate field validation (email, studentId, phoneNumber) with API endpoint
 - Basic tracking session UI
 - Toast notifications for user feedback
-- Responsive UI with Tailwind CSS
+- Responsive UI with oval face detection overlay (changed from circle)
+- Modular component architecture for face capture system (5 sub-components)
+- Automatic pose progression and validation system
+- Enhanced face verification with multi-pose descriptor comparison
+- Skip functionality removed from face registration process
 
 **🔄 In Progress:**
 - Behavioral tracking implementation (eye movement, mouth movement, face orientation detection)
@@ -65,18 +71,62 @@ The system tracks user behavior through four main entities:
 
 ## Key Directories
 
-- `src/app/api/auth/` - Authentication endpoints (login, register, face-register, face-verify)
-- `src/lib/` - Shared utilities (Prisma client, Supabase client, validation, face-api)
+- `src/app/api/auth/` - Authentication endpoints (login, register, face-register, face-verify, check-duplicate)
+- `src/lib/` - Shared utilities (Prisma client, Supabase client, validation, face-api with pose detection)
 - `src/app/components/auth/` - Authentication UI components (AuthForm, FaceCapture, FaceLogin)
-- `src/app/components/ui/` - Reusable UI components (Button, Card, Input, Select, etc.)
+- `src/app/components/auth/face-capture/` - Modular face capture sub-components
+- `src/app/components/ui/` - Enhanced UI components with validation support
 - `prisma/` - Database schema and migrations
+
+## Face Capture Component Architecture
+
+### Main Component
+- `FaceCapture.tsx` - Main orchestrator for multi-pose capture flow (337 lines, refactored from 530+ lines)
+
+### Sub-Components
+- `VideoPreview.tsx` - Video streaming with overlay management
+- `FaceDetectionOverlay.tsx` - Visual feedback for face detection with oval overlay
+- `PoseInstructions.tsx` - User guidance and progress tracking with real-time feedback
+- `CaptureStatus.tsx` - Status indicators and action buttons
+- `StatusIndicators.tsx` - Real-time detection status display
+
+### Key Features
+- Automatic pose detection and validation using facial landmarks
+- Real-time confidence scoring and pose analysis
+- Eye Aspect Ratio (EAR) algorithm for blink detection
+- Auto-progression between poses (10 consecutive stable detections)
+- Visual progress indicators and real-time feedback
+
+## Face Detection & Recognition Implementation
+
+### Core Algorithms
+- **Pose Detection**: Uses facial landmarks (nose, eyes, mouth) for yaw angle calculation
+- **Blink Detection**: Eye Aspect Ratio (EAR) using 6-point eye landmarks
+- **Pose Classification**: 15° threshold for front/left/right classification
+- **Confidence Thresholds**: 70% minimum for pose validation, 0.25 EAR for blink detection
+
+### face-api.js Integration (`src/lib/face-api.ts`)
+- `loadFaceApiModels()` - CDN-based model loading with error handling
+- `detectFaceAndGetDescriptor()` - Face detection and 128-point descriptor extraction
+- `detectFacePose()` - Real-time pose analysis with landmarks and expressions
+- `analyzeFacePose()` - Yaw calculation using eye and nose landmarks
+- `detectBlinking()` - EAR algorithm implementation
+- `isPoseReady()` - Validation logic for automatic capture
+- `compareFaceDescriptors()` - Euclidean distance calculation for authentication
+
+### Multi-Pose Capture System
+1. **Front Pose**: Straight-facing capture (yaw < 15°)
+2. **Left Pose**: 30° left turn (yaw < -15°)
+3. **Right Pose**: 30° right turn (yaw > 15°)
+4. **Blink Detection**: EAR < 0.25 threshold
 
 ## Authentication Flow
 
-1. **Registration**: User registers with email/password + face biometric data
-2. **Login**: User can login with email/password or face recognition
-3. **Face Recognition**: Uses face-api.js for real-time face detection and verification
-4. **JWT Tokens**: Secure token-based authentication with 1-day expiry
+1. **Registration**: Multi-pose face biometric data capture with automatic progression
+2. **Duplicate Validation**: Real-time checking via `/api/auth/check-duplicate`
+3. **Login**: Email/password or face recognition with multi-pose verification
+4. **Face Recognition**: Enhanced security using multi-pose descriptor comparison
+5. **JWT Tokens**: Secure token-based authentication with 1-day expiry
 
 ## Import Paths
 
@@ -94,7 +144,31 @@ Use `@/*` alias for imports from `src/` directory (configured in tsconfig.json).
 
 - Thai language support throughout the interface
 - Responsive design with mobile-first approach
-- Real-time camera preview with face detection overlay
-- Loading states and error handling
+- Real-time camera preview with oval face detection overlay
+- Automatic capture system with visual feedback
+- Loading states and comprehensive error handling
 - Toast notifications for user feedback
 - Gradient backgrounds and modern card-based layout
+- Real-time pose confidence and detection status display
+- Progress bars and status indicators for multi-pose capture
+
+## Development & Debugging
+
+### Face Recognition Debugging
+- Console logging enabled for pose detection analysis
+- Real-time confidence scoring and landmark tracking
+- Detailed error handling with Thai language messages
+- EAR calculation logging for blink detection debugging
+
+### Component Architecture Benefits
+- Separation of concerns with 5 specialized sub-components
+- Reusable UI components with enhanced validation
+- Real-time state management for capture flow
+- Improved maintainability and testing capabilities
+
+### Security Enhancements
+- Multi-pose biometric data for enhanced security
+- Configurable similarity thresholds (currently 0.8)
+- Liveness detection through blink validation
+- No skip functionality to ensure complete biometric capture
+- Real-time duplicate field validation to prevent data conflicts
