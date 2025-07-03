@@ -1,5 +1,3 @@
-import { Button } from "@/app/components/ui/Button";
-
 interface CaptureStatusProps {
   isAllPosesComplete: boolean;
   loading: boolean;
@@ -70,8 +68,7 @@ export function CaptureStatus({
           </div>
         ) : (
           <div className="flex items-center justify-center">
-            <span className="text-2xl mr-2">{currentPoseIcon}</span>
-            <span className="text-gray-600">รอท่า {currentPoseTitle}...</span>
+            <span className="text-gray-600">กรุณา {currentPoseTitle}...</span>
           </div>
         )}
       </div>

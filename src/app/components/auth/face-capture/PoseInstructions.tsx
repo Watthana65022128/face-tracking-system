@@ -52,7 +52,7 @@ export function PoseInstructions({
       </div>
       
       {/* General Instructions */}
-      <div className="text-sm text-purple-600 space-y-1">
+      <div className="text-sm text-red-600 space-y-1">
         <p>คำแนะนำ</p>
         <p>• โปรดวางใบหน้าให้อยู่ในขอบเขต</p>
         <p>• โปรดหลีกเลี่ยงแสงและเงาที่มีผลกระทบต่อการตรวจจับ</p>

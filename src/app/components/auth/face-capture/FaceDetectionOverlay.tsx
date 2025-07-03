@@ -30,15 +30,6 @@ export function FaceDetectionOverlay({
           ? 'border-yellow-400 animate-pulse'
           : 'border-purple-400 animate-pulse'
       }`} />
-      
-      {/* Pose readiness indicator */}
-      {isPoseReady && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-          <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium animate-bounce">
-            พร้อมถ่าย {poseStableCount}/10
-          </div>
-        </div>
-      )}
     </div>
   );
 }

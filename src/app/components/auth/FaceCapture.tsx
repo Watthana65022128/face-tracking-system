@@ -254,7 +254,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
     <Card className="p-8 w-full max-w-lg mx-auto">
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">ลงทะเบียนใบหน้า</h2>
-        <p className="text-lg text-purple-600 font-semibold mt-2">
+        <p className="text-lg text-gray-600 font-semibold mt-2">
           {currentPose.title} ({currentPoseIndex + 1}/{poses.length})
         </p>
       </div>
