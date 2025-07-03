@@ -83,8 +83,8 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
       }
     }
 
-    // Check for duplicate errors
-    const allErrors = { ...newErrors, ...duplicateErrors };
+    // Check for duplicate errors (only for register)
+    const allErrors = type === "register" ? { ...newErrors, ...duplicateErrors } : newErrors;
     
     // If there are any errors, show them and stop submission
     if (Object.keys(allErrors).length > 0) {
@@ -154,8 +154,8 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
   const handleBlur = (field: string) => () => {
     const value = formData[field as keyof typeof formData];
     
-    // ตรวจสอบเฉพาะฟิลด์ที่ต้องการ
-    if (['email', 'studentId', 'phoneNumber'].includes(field) && value) {
+    // ตรวจสอบเฉพาะฟิลด์ที่ต้องการ และเฉพาะในกรณีที่เป็น register เท่านั้น
+    if (type === "register" && ['email', 'studentId', 'phoneNumber'].includes(field) && value) {
       // ตรวจสอบการ validate พื้นฐานก่อน
       let isValidFormat = true;
       
@@ -239,7 +239,6 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
                 label="ชื่อ"
                 value={formData.firstName}
                 onChange={handleChange("firstName")}
-                placeholder="ชื่อ"
                 required
                 error={errors.firstName}
               />
@@ -247,7 +246,6 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
                 label="นามสกุล"
                 value={formData.lastName}
                 onChange={handleChange("lastName")}
-                placeholder="นามสกุล"
                 required
                 error={errors.lastName}
               />
@@ -266,7 +264,6 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
               value={formData.phoneNumber}
               onChange={handleChange("phoneNumber")}
               onBlur={handleBlur("phoneNumber")}
-              placeholder="0812345678"
               error={errors.phoneNumber || duplicateErrors.phoneNumber}
               loading={checking.phoneNumber}
             />
@@ -279,9 +276,10 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
           value={formData.email}
           onChange={handleChange("email")}
           onBlur={handleBlur("email")}
+          placeholder="your@gmail.com"
           required
-          error={errors.email || duplicateErrors.email}
-          loading={checking.email}
+          error={errors.email || (type === "register" ? duplicateErrors.email : "")}
+          loading={type === "register" ? checking.email : false}
         />
 
         <PasswordInput
