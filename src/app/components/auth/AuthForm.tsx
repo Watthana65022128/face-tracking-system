@@ -276,7 +276,6 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
           value={formData.email}
           onChange={handleChange("email")}
           onBlur={handleBlur("email")}
-          placeholder="your@gmail.com"
           required
           error={errors.email || (type === "register" ? duplicateErrors.email : "")}
           loading={type === "register" ? checking.email : false}
