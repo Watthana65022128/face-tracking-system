@@ -23,7 +23,9 @@ export default function RegisterPage() {
           password: data.password,
           firstName: data.firstName,
           lastName: data.lastName,
-          studentId: data.studentId
+          studentId: data.studentId,
+          title: data.title,
+          phoneNumber: data.phoneNumber
         })
       })
 

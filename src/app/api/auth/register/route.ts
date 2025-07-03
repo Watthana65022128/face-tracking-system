@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
       data: {
         email: normalizedEmail,
         password: hashedPassword,
-        title,
+        title: title.toLowerCase(),
         firstName,
         lastName,
         studentId: studentId || null,
