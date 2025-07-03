@@ -20,13 +20,14 @@ export default function FaceRegisterPage() {
     }
   }, [])
 
-  const handleFaceCapture = async (faceDescriptor: number[]) => {
+  const handleFaceCapture = async (faceDescriptors: { front: number[], left: number[], right: number[], blink: number[] }) => {
     if (!userData) return
     
     setLoading(true)
     
     try {
-      console.log('Saving face data for user:', userData.id)
+      console.log('Saving multi-pose face data for user:', userData.id)
+      console.log('Captured poses:', Object.keys(faceDescriptors))
       
       const response = await fetch('/api/auth/face-register', {
         method: 'POST',
@@ -35,7 +36,7 @@ export default function FaceRegisterPage() {
         },
         body: JSON.stringify({
           userId: userData.id,
-          faceData: faceDescriptor
+          faceData: faceDescriptors
         })
       })
 

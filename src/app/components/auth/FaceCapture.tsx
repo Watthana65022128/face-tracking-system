@@ -5,18 +5,41 @@ import { Card } from "@/app/components/ui/Card";
 import { loadFaceApiModels, detectFaceAndGetDescriptor } from "@/lib/face-api";
 
 interface FaceCaptureProps {
-  onCapture: (faceDescriptor: number[]) => void;
+  onCapture: (faceDescriptors: { front: number[], left: number[], right: number[], blink: number[] }) => void;
   loading?: boolean;
+}
+
+type PoseType = 'front' | 'left' | 'right' | 'blink';
+
+interface PoseData {
+  type: PoseType;
+  title: string;
+  instruction: string;
+  icon: string;
 }
 
 export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [faceDetected, setFaceDetected] = useState(false);
-  const [captureCount, setCaptureCount] = useState(0);
   const [error, setError] = useState("");
   const [isModelLoading, setIsModelLoading] = useState(true);
+  
+  // Multi-pose capture states
+  const [currentPoseIndex, setCurrentPoseIndex] = useState(0);
+  const [capturedPoses, setCapturedPoses] = useState<{ [key in PoseType]?: number[] }>({});
+  const [isCapturingPose, setIsCapturingPose] = useState(false);
+  const [poseProgress, setPoseProgress] = useState(0);
+  const [isAllPosesComplete, setIsAllPosesComplete] = useState(false);
+  
+  const poses: PoseData[] = [
+    { type: 'front', title: 'หน้าตรง', instruction: 'มองตรงเข้ากล้อง', icon: '👤' },
+    { type: 'left', title: 'หันซ้าย', instruction: 'หันหน้าไปทางซ้าย 30 องศา', icon: '👈' },
+    { type: 'right', title: 'หันขวา', instruction: 'หันหน้าไปทางขวา 30 องศา', icon: '👉' },
+    { type: 'blink', title: 'กระพริบตา', instruction: 'กระพริบตา 2-3 ครั้ง', icon: '👁️' }
+  ];
+  
+  const currentPose = poses[currentPoseIndex];
 
   useEffect(() => {
     initializeFaceApi();
@@ -115,28 +138,59 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
   };
 
   const handleCapture = async () => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || isCapturingPose) return;
 
     try {
       setError("");
+      setIsCapturingPose(true);
 
       // Get face descriptor using face-api.js
       const faceDescriptor = await detectFaceAndGetDescriptor(videoRef.current);
 
-      setCaptureCount((prev) => prev + 1);
-      setFaceDetected(true);
+      // Store the descriptor for current pose
+      const newCapturedPoses = {
+        ...capturedPoses,
+        [currentPose.type]: faceDescriptor
+      };
+      setCapturedPoses(newCapturedPoses);
 
-      // Pass descriptor to parent component
-      onCapture(faceDescriptor);
+      // Show progress animation
+      setPoseProgress(100);
+      
+      // Move to next pose after delay
+      setTimeout(() => {
+        if (currentPoseIndex < poses.length - 1) {
+          setCurrentPoseIndex(prev => prev + 1);
+          setPoseProgress(0);
+        } else {
+          // All poses completed
+          setIsAllPosesComplete(true);
+          // Auto-save all captured poses
+          onCapture(newCapturedPoses as { front: number[], left: number[], right: number[], blink: number[] });
+        }
+        setIsCapturingPose(false);
+      }, 1500);
+
     } catch (err: any) {
       setError(err.message || "ไม่สามารถตรวจจับใบหน้าได้ กรุณาลองใหม่");
       console.error("Face capture error:", err);
+      setIsCapturingPose(false);
     }
   };
 
   const handleRetake = () => {
-    setCaptureCount(0);
-    setFaceDetected(false);
+    setCurrentPoseIndex(0);
+    setCapturedPoses({});
+    setPoseProgress(0);
+    setIsAllPosesComplete(false);
+    setIsCapturingPose(false);
+  };
+  
+  const handleSkipPose = () => {
+    if (currentPoseIndex < poses.length - 1) {
+      setCurrentPoseIndex(prev => prev + 1);
+      setPoseProgress(0);
+    }
   };
 
   return (
@@ -241,25 +295,6 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
               <span>{isStreaming ? "กล้องเปิดอยู่" : "กล้องปิด"}</span>
             </div>
           </div>
-
-          {faceDetected && (
-            <div className="absolute top-4 right-4">
-              <div className="flex items-center space-x-2 px-3 py-2 rounded-full text-sm bg-purple-100 text-purple-800">
-                <svg
-                  className="w-4 h-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span>ตรวจพบใบหน้า</span>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Hidden Canvas for capture */}
@@ -279,117 +314,72 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
 
       {/* Action Buttons */}
       <div className="space-y-3">
-        {!faceDetected ? (
-          <Button
-            onClick={handleCapture}
-            disabled={!isStreaming || loading || isModelLoading}
-            className="w-full"
-          >
-            {loading ? (
-              <div className="flex items-center justify-center">
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                กำลังบันทึก...
-              </div>
-            ) : isModelLoading ? (
-              <div className="flex items-center justify-center">
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                กำลังโหลดโมเดล...
-              </div>
-            ) : (
-              <>
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                ถ่ายภาพใบหน้า
-              </>
-            )}
-          </Button>
+        {!isAllPosesComplete ? (
+          <div className="space-y-3">
+            <Button
+              onClick={handleCapture}
+              disabled={!isStreaming || loading || isModelLoading || isCapturingPose}
+              className="w-full"
+            >
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  กำลังบันทึก...
+                </div>
+              ) : isModelLoading ? (
+                <div className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  กำลังโหลดโมเดล...
+                </div>
+              ) : isCapturingPose ? (
+                <div className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  กำลังบันทึกท่า...
+                </div>
+              ) : (
+                <>
+                  <span className="text-xl mr-2">{currentPose.icon}</span>
+                  ถ่ายภาพท่า {currentPose.title}
+                </>
+              )}
+            </Button>
+            
+            {/* Skip Button */}
+            <Button
+              onClick={handleSkipPose}
+              variant="secondary"
+              disabled={loading || isModelLoading || isCapturingPose}
+              className="w-full"
+            >
+              ข้ามท่านี้
+            </Button>
+          </div>
         ) : (
           <div className="space-y-3">
             <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
-              <svg
-                className="w-8 h-8 text-green-500 mx-auto mb-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
+              <svg className="w-8 h-8 text-green-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <p className="text-green-800 font-medium">ถ่ายภาพสำเร็จ!</p>
+              <p className="text-green-800 font-medium">ลงทะเบียนสำเร็จ!</p>
               <p className="text-green-600 text-sm">
-                ข้อมูลใบหน้าได้รับการบันทึกแล้ว
+                บันทึกข้อมูลใบหน้าทั้ง {Object.keys(capturedPoses).length} ท่าเรียบร้อยแล้ว
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Button
-                onClick={handleRetake}
-                variant="secondary"
-                disabled={loading}
-              >
+              <Button onClick={handleRetake} variant="secondary" disabled={loading}>
                 ถ่ายใหม่
               </Button>
-              <Button
-                onClick={() => (window.location.href = "/login")}
-                disabled={loading}
-              >
+              <Button onClick={() => (window.location.href = "/login")} disabled={loading}>
                 เข้าสู่ระบบ
               </Button>
             </div>

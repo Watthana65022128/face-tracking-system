@@ -62,23 +62,54 @@ export async function POST(request: NextRequest) {
     console.log('Comparing face descriptors...')
 
     // Compare face descriptors
-    let storedFaceData: number[]
+    let storedFaceData: any
     
     // Parse JSON data if it's stored as string
     if (typeof user.faceData === 'string') {
       storedFaceData = JSON.parse(user.faceData)
     } else {
-      storedFaceData = user.faceData as number[]
+      storedFaceData = user.faceData
     }
     
-    const distance = euclideanDistance(faceData, storedFaceData)
+    let distances: { pose: string, distance: number }[] = []
+    let minDistance = Infinity
+    let bestMatch = ''
     
-    // Face matching threshold
-    const threshold = 0.6
-    const isMatch = distance < threshold
+    // Check if stored data is multi-pose (object) or single pose (array)
+    if (Array.isArray(storedFaceData)) {
+      // Legacy single pose data
+      console.log('Using legacy single pose comparison')
+      const distance = euclideanDistance(faceData, storedFaceData)
+      distances.push({ pose: 'legacy', distance })
+      minDistance = distance
+      bestMatch = 'legacy'
+    } else {
+      // Multi-pose data - compare against all stored poses
+      console.log('Using multi-pose comparison')
+      const poses = Object.keys(storedFaceData)
+      
+      for (const pose of poses) {
+        if (Array.isArray(storedFaceData[pose]) && storedFaceData[pose].length === 128) {
+          const distance = euclideanDistance(faceData, storedFaceData[pose])
+          distances.push({ pose, distance })
+          
+          if (distance < minDistance) {
+            minDistance = distance
+            bestMatch = pose
+          }
+        }
+      }
+    }
+    
+    // Face matching threshold - use the best match
+    // เพิ่ม threshold เพื่อให้ยืดหยุ่นมากขึ้น เนื่องจากใบหน้าอาจมีการเปลี่ยนแปลงเล็กน้อย
+    const threshold = 0.8
+    const isMatch = minDistance < threshold
 
     console.log('Face comparison result:', {
-      distance,
+      distances,
+      minDistance,
+      bestMatch,
       threshold,
       isMatch,
       user: `${user.firstName} ${user.lastName}`
@@ -86,11 +117,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       isMatch,
-      distance,
+      distance: minDistance,
+      bestMatch,
+      allDistances: distances,
       threshold,
       message: isMatch 
-        ? 'ยืนยันตัวตนสำเร็จ' 
-        : 'ใบหน้าไม่ตรงกับข้อมูลที่ลงทะเบียน'
+        ? `ยืนยันตัวตนสำเร็จ (ตรงกับท่า ${bestMatch})` 
+        : `ใบหน้าไม่ตรงกับข้อมูลที่ลงทะเบียน (ระยะทางต่ำสุด: ${minDistance.toFixed(3)})`
     })
 
   } catch (error: any) {
