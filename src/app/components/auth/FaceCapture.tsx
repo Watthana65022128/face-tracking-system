@@ -220,7 +220,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
           {/* Face Detection Overlay */}
           {isStreaming && !isModelLoading && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="border-2 border-purple-400 rounded-full w-48 h-48 animate-pulse" />
+              <div className="border-2 border-purple-400 rounded-full w-48 h-54 animate-pulse" />
             </div>
           )}
 
