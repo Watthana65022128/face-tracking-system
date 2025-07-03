@@ -25,6 +25,8 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
     phoneNumber: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [checking, setChecking] = useState<Record<string, boolean>>({});
+  const [duplicateErrors, setDuplicateErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,9 +83,12 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
       }
     }
 
+    // Check for duplicate errors
+    const allErrors = { ...newErrors, ...duplicateErrors };
+    
     // If there are any errors, show them and stop submission
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    if (Object.keys(allErrors).length > 0) {
+      setErrors(allErrors);
       return;
     }
 
@@ -96,13 +101,81 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
     onSubmit(submitData);
   };
 
+  // ฟังก์ชันตรวจสอบข้อมูลซ้ำ
+  const checkDuplicate = async (field: string, value: string) => {
+    if (!value.trim()) return;
+    
+    setChecking(prev => ({ ...prev, [field]: true }));
+    
+    try {
+      const response = await fetch('/api/auth/check-duplicate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field, value: value.trim() })
+      });
+      
+      const result = await response.json();
+      
+      if (result.isDuplicate) {
+        setDuplicateErrors(prev => ({ ...prev, [field]: result.message }));
+      } else {
+        setDuplicateErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+    } catch (error) {
+      console.error('Duplicate check error:', error);
+    } finally {
+      setChecking(prev => ({ ...prev, [field]: false }));
+    }
+  };
+
   const handleChange =
     (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+      const value = e.target.value;
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      
+      // Clear errors when user types
       if (errors[field]) {
         setErrors((prev) => ({ ...prev, [field]: "" }));
       }
+      if (duplicateErrors[field]) {
+        setDuplicateErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
     };
+
+  // ฟังก์ชันสำหรับการ blur (เมื่อผู้ใช้คลิกออกจากฟิลด์)
+  const handleBlur = (field: string) => () => {
+    const value = formData[field as keyof typeof formData];
+    
+    // ตรวจสอบเฉพาะฟิลด์ที่ต้องการ
+    if (['email', 'studentId', 'phoneNumber'].includes(field) && value) {
+      // ตรวจสอบการ validate พื้นฐานก่อน
+      let isValidFormat = true;
+      
+      if (field === 'email') {
+        const emailValidation = validateEmail(value);
+        isValidFormat = emailValidation.isValid;
+      } else if (field === 'studentId') {
+        const studentIdValidation = validateStudentId(value);
+        isValidFormat = studentIdValidation.isValid;
+      } else if (field === 'phoneNumber') {
+        const phoneValidation = validatePhoneNumber(value);
+        isValidFormat = phoneValidation.isValid;
+      }
+      
+      // ถ้า format ถูกต้องแล้วค่อยตรวจสอบซ้ำ
+      if (isValidFormat) {
+        checkDuplicate(field, value);
+      }
+    }
+  };
 
   return (
     <Card className="p-8 w-full max-w-md mx-auto">
@@ -183,15 +256,19 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
               label="รหัสผู้เรียน"
               value={formData.studentId}
               onChange={handleChange("studentId")}
+              onBlur={handleBlur("studentId")}
               placeholder="650xxxx"
-              error={errors.studentId}
+              error={errors.studentId || duplicateErrors.studentId}
+              loading={checking.studentId}
             />
             <Input
               label="เบอร์โทรศัพท์"
               value={formData.phoneNumber}
               onChange={handleChange("phoneNumber")}
+              onBlur={handleBlur("phoneNumber")}
               placeholder="0812345678"
-              error={errors.phoneNumber}
+              error={errors.phoneNumber || duplicateErrors.phoneNumber}
+              loading={checking.phoneNumber}
             />
           </>
         )}
@@ -201,8 +278,10 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
           type="email"
           value={formData.email}
           onChange={handleChange("email")}
+          onBlur={handleBlur("email")}
           required
-          error={errors.email}
+          error={errors.email || duplicateErrors.email}
+          loading={checking.email}
         />
 
         <PasswordInput

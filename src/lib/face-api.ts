@@ -28,11 +28,12 @@ export async function loadFaceApiModels() {
     isLoading = true;
     console.log("Loading face-api models...");
 
-    // โหลดโมเดลที่จำเป็น
+    // โหลดโมเดลที่จำเป็นสำหรับการตรวจจับท่าและการวิเคราะห์
     await Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
       faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
       faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+      faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL), // สำหรับตรวจจับการกระพริบตา
     ]);
 
     isModelLoaded = true;
@@ -47,7 +48,8 @@ export async function loadFaceApiModels() {
 }
 
 export async function detectFaceAndGetDescriptor(
-  imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement
+  imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement,
+  skipValidation: boolean = false
 ): Promise<number[]> {
   try {
     // ตรวจสอบว่าโมเดลโหลดแล้วหรือยัง
@@ -137,4 +139,187 @@ export function isModelsLoaded(): boolean {
 export function resetModelState(): void {
   isModelLoaded = false;
   isLoading = false;
+}
+
+// ฟังก์ชันตรวจสอบท่าใบหน้า
+export async function detectFacePose(
+  imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement
+): Promise<{
+  detected: boolean;
+  pose: 'front' | 'left' | 'right' | 'unknown';
+  confidence: number;
+  landmarks?: faceapi.FaceLandmarks68;
+  isBlinking?: boolean;
+}> {
+  try {
+    if (!isModelLoaded) {
+      await loadFaceApiModels();
+    }
+
+    const detectionOptions = new faceapi.TinyFaceDetectorOptions({
+      inputSize: 416,
+      scoreThreshold: 0.3
+    });
+
+    const detection = await faceapi
+      .detectSingleFace(imageElement, detectionOptions)
+      .withFaceLandmarks()
+      .withFaceExpressions();
+
+    if (!detection) {
+      return {
+        detected: false,
+        pose: 'unknown',
+        confidence: 0
+      };
+    }
+
+    const landmarks = detection.landmarks;
+    const expressions = detection.expressions;
+    
+    // วิเคราะห์ท่าใบหน้าจาก landmarks
+    const pose = analyzeFacePose(landmarks);
+    
+    // ตรวจจับการกระพริบตา
+    const isBlinking = detectBlinking(landmarks);
+    
+    // Debug logging สำหรับการตรวจจับท่า
+    console.log('Face pose detection:', {
+      pose: pose.pose,
+      yaw: pose.yaw.toFixed(2),
+      confidence: detection.detection.score.toFixed(3),
+      isBlinking,
+      timestamp: new Date().toISOString()
+    });
+    
+    return {
+      detected: true,
+      pose: pose.pose,
+      confidence: detection.detection.score,
+      landmarks,
+      isBlinking
+    };
+
+  } catch (error) {
+    console.error('Face pose detection error:', error);
+    return {
+      detected: false,
+      pose: 'unknown',
+      confidence: 0
+    };
+  }
+}
+
+// วิเคราะห์ท่าใบหน้าจาก landmarks
+function analyzeFacePose(landmarks: faceapi.FaceLandmarks68): {
+  pose: 'front' | 'left' | 'right' | 'unknown';
+  yaw: number;
+} {
+  const positions = landmarks.positions;
+  
+  // ใช้จุด landmarks ของจมูกและมุมตา
+  const leftEye = positions[36]; // มุมตาซ้าย
+  const rightEye = positions[45]; // มุมตาขวา
+  const noseTip = positions[30]; // ปลายจมูก
+  const leftMouth = positions[48]; // มุมปากซ้าย
+  const rightMouth = positions[54]; // มุมปากขวา
+  
+  // คำนวณระยะห่างระหว่างตาและปาก
+  const eyeDistance = Math.abs(leftEye.x - rightEye.x);
+  const mouthDistance = Math.abs(leftMouth.x - rightMouth.x);
+  
+  // คำนวณมุมหมุนหน้า (yaw)
+  const faceCenter = (leftEye.x + rightEye.x) / 2;
+  const noseOffset = noseTip.x - faceCenter;
+  const yaw = (noseOffset / eyeDistance) * 100; // แปลงเป็นเปอร์เซ็นต์
+  
+  let pose: 'front' | 'left' | 'right' | 'unknown' = 'unknown';
+  
+  if (Math.abs(yaw) < 15) {
+    pose = 'front';
+  } else if (yaw > 15) {
+    pose = 'right'; // หันขวา (จมูกเอียงไปทางขวา)
+  } else if (yaw < -15) {
+    pose = 'left'; // หันซ้าย (จมูกเอียงไปทางซ้าย)
+  }
+  
+  return { pose, yaw };
+}
+
+// ตรวจจับการกระพริบตา - ใช้ Eye Aspect Ratio (EAR)
+function detectBlinking(landmarks: faceapi.FaceLandmarks68): boolean {
+  const positions = landmarks.positions;
+  
+  // จุด landmarks ของตาซ้าย (36-41)
+  const leftEyePoints = {
+    p1: positions[36], // มุมซ้าย
+    p2: positions[37], // บนซ้าย
+    p3: positions[38], // บนขวา
+    p4: positions[39], // มุมขวา
+    p5: positions[40], // ล่างขวา
+    p6: positions[41]  // ล่างซ้าย
+  };
+  
+  // จุด landmarks ของตาขวา (42-47)
+  const rightEyePoints = {
+    p1: positions[42], // มุมซ้าย
+    p2: positions[43], // บนซ้าย
+    p3: positions[44], // บนขวา
+    p4: positions[45], // มุมขวา
+    p5: positions[46], // ล่างขวา
+    p6: positions[47]  // ล่างซ้าย
+  };
+  
+  // คำนวณ Eye Aspect Ratio (EAR)
+  function calculateEAR(eye: any) {
+    // ระยะทางแนวตั้ง
+    const vertical1 = Math.sqrt(
+      Math.pow(eye.p2.x - eye.p6.x, 2) + Math.pow(eye.p2.y - eye.p6.y, 2)
+    );
+    const vertical2 = Math.sqrt(
+      Math.pow(eye.p3.x - eye.p5.x, 2) + Math.pow(eye.p3.y - eye.p5.y, 2)
+    );
+    
+    // ระยะทางแนวนอน
+    const horizontal = Math.sqrt(
+      Math.pow(eye.p1.x - eye.p4.x, 2) + Math.pow(eye.p1.y - eye.p4.y, 2)
+    );
+    
+    // EAR = (vertical1 + vertical2) / (2 * horizontal)
+    return (vertical1 + vertical2) / (2 * horizontal);
+  }
+  
+  const leftEAR = calculateEAR(leftEyePoints);
+  const rightEAR = calculateEAR(rightEyePoints);
+  const avgEAR = (leftEAR + rightEAR) / 2;
+  
+  // threshold สำหรับการกระพริบ (ค่าต่ำแสดงว่าตาปิด)
+  const blinkThreshold = 0.25;
+  
+  console.log('Blink detection:', {
+    leftEAR: leftEAR.toFixed(3),
+    rightEAR: rightEAR.toFixed(3),
+    avgEAR: avgEAR.toFixed(3),
+    threshold: blinkThreshold,
+    isBlinking: avgEAR < blinkThreshold
+  });
+  
+  return avgEAR < blinkThreshold;
+}
+
+// ฟังก์ชันตรวจสอบความพร้อมของท่า
+export function isPoseReady(
+  currentPose: 'front' | 'left' | 'right' | 'unknown',
+  targetPose: 'front' | 'left' | 'right' | 'blink',
+  confidence: number,
+  isBlinking?: boolean
+): boolean {
+  // ความมั่นใจต้องมากกว่า 70%
+  if (confidence < 0.7) return false;
+  
+  if (targetPose === 'blink') {
+    return isBlinking === true;
+  }
+  
+  return currentPose === targetPose;
 }
