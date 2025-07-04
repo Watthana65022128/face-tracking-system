@@ -238,9 +238,9 @@ function analyzeFacePose(landmarks: faceapi.FaceLandmarks68): {
   if (Math.abs(yaw) < 15) {
     pose = 'front';
   } else if (yaw > 15) {
-    pose = 'right'; // หันขวา (จมูกเอียงไปทางขวา)
+    pose = 'left'; // หันซ้าย (จมูกเอียงไปทางขวาของหน้าจอ = ผู้ใช้หันซ้าย)
   } else if (yaw < -15) {
-    pose = 'left'; // หันซ้าย (จมูกเอียงไปทางซ้าย)
+    pose = 'right'; // หันขวา (จมูกเอียงไปทางซ้ายของหน้าจอ = ผู้ใช้หันขวา)
   }
   
   return { pose, yaw };
