@@ -212,7 +212,7 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
               label="คำนำหน้าชื่อ"
               value={formData.title}
               onChange={handleChange("title")}
-              placeholder="เลือกคำนำหน้าชื่อ"
+              placeholder="กรุณาเลือก"
               required
               error={errors.title}
               options={[
@@ -257,7 +257,6 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
               onBlur={handleBlur("studentId")}
               placeholder="650xxxx"
               error={errors.studentId || duplicateErrors.studentId}
-              loading={checking.studentId}
             />
             <Input
               label="เบอร์โทรศัพท์"
@@ -265,7 +264,6 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
               onChange={handleChange("phoneNumber")}
               onBlur={handleBlur("phoneNumber")}
               error={errors.phoneNumber || duplicateErrors.phoneNumber}
-              loading={checking.phoneNumber}
             />
           </>
         )}
@@ -278,7 +276,6 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
           onBlur={handleBlur("email")}
           required
           error={errors.email || (type === "register" ? duplicateErrors.email : "")}
-          loading={type === "register" ? checking.email : false}
         />
 
         <PasswordInput
