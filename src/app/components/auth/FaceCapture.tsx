@@ -194,6 +194,63 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
     }
   };
   
+  const playSuccessSound = () => {
+    try {
+      // สร้างเสียงเชิงบวกด้วย Web Audio API
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // เสียงสำหรับแต่ละขั้นตอน (โทนเสียงเพิ่มขึ้น)
+      const frequencies = [523.25, 587.33, 659.25, 698.46]; // C5, D5, E5, F5
+      const frequency = frequencies[currentPoseIndex] || 523.25;
+      
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (error) {
+      console.log('Audio context not supported or blocked');
+    }
+  };
+
+  const playCompletionSound = () => {
+    try {
+      // เสียงสำหรับเสร็จสิ้นทั้งหมด (แบบมีท่วงทำนอง)
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      const melody = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+      
+      melody.forEach((frequency, index) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+        oscillator.type = 'sine';
+        
+        const startTime = audioContext.currentTime + (index * 0.2);
+        gainNode.gain.setValueAtTime(0.2, startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4);
+        
+        oscillator.start(startTime);
+        oscillator.stop(startTime + 0.4);
+      });
+    } catch (error) {
+      console.log('Audio context not supported or blocked');
+    }
+  };
+
   const handleAutoCapture = async () => {
     if (!videoRef.current || isCapturingPose || autoCapturing) return;
 
@@ -213,12 +270,17 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
 
       setPoseProgress(100);
       
+      // เล่นเสียงเมื่อจับใบหน้าสำเร็จ
+      playSuccessSound();
+      
       setTimeout(() => {
         if (currentPoseIndex < poses.length - 1) {
           setCurrentPoseIndex(prev => prev + 1);
           setPoseProgress(0);
         } else {
           setIsAllPosesComplete(true);
+          // เล่นเสียงเมื่อเสร็จสิ้นทั้งหมด
+          playCompletionSound();
           onCapture(newCapturedPoses as { front: number[], left: number[], right: number[], blink: number[] });
         }
         setIsCapturingPose(false);
