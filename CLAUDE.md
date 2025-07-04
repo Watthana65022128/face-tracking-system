@@ -36,13 +36,13 @@ This is a Next.js 15 tracking system with face recognition authentication and be
 - Eye Aspect Ratio (EAR) algorithm for accurate blink detection using facial landmarks
 - Password-based authentication fallback
 - User profile management with Thai localization
-- Real-time duplicate field validation (email, studentId, phoneNumber) with API endpoint
+- Real-time duplicate field validation (email, studentId, phoneNumber) with API endpoint - **REGISTER ONLY**
 - Basic tracking session UI
 - Toast notifications for user feedback
 - Responsive UI with oval face detection overlay (changed from circle)
 - Modular component architecture for face capture system (5 sub-components)
 - Automatic pose progression and validation system
-- Enhanced face verification with multi-pose descriptor comparison
+- Enhanced face verification with multi-pose descriptor comparison with **STRICT SECURITY** (threshold 0.4)
 - Skip functionality removed from face registration process
 
 **🔄 In Progress:**
@@ -123,10 +123,18 @@ The system tracks user behavior through four main entities:
 ## Authentication Flow
 
 1. **Registration**: Multi-pose face biometric data capture with automatic progression
-2. **Duplicate Validation**: Real-time checking via `/api/auth/check-duplicate`
+2. **Duplicate Validation**: Real-time checking via `/api/auth/check-duplicate` - **REGISTER ONLY**
 3. **Login**: Email/password or face recognition with multi-pose verification
-4. **Face Recognition**: Enhanced security using multi-pose descriptor comparison
+4. **Face Recognition**: Enhanced security using multi-pose descriptor comparison with **STRICT** threshold (0.4)
 5. **JWT Tokens**: Secure token-based authentication with 1-day expiry
+
+## Security Updates (Latest)
+
+### Face Recognition Security
+- **CRITICAL**: Updated face verification threshold from 0.8 to 0.4 for enhanced security
+- **FIXED**: Unauthorized access issue where different faces could pass verification
+- **IMPROVED**: Real-time duplicate validation now only runs during registration, not login
+- **ENHANCED**: Additional validMatch checks in face verification process
 
 ## Import Paths
 
@@ -168,7 +176,9 @@ Use `@/*` alias for imports from `src/` directory (configured in tsconfig.json).
 
 ### Security Enhancements
 - Multi-pose biometric data for enhanced security
-- Configurable similarity thresholds (currently 0.8)
+- **STRICT** similarity threshold (0.4) for face verification - prevents unauthorized access
 - Liveness detection through blink validation
 - No skip functionality to ensure complete biometric capture
-- Real-time duplicate field validation to prevent data conflicts
+- Real-time duplicate field validation to prevent data conflicts **REGISTER ONLY**
+- Enhanced face verification with additional validMatch checks
+- Comprehensive logging for security analysis and debugging
