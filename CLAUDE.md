@@ -210,3 +210,25 @@ Use `@/*` alias for imports from `src/` directory (configured in tsconfig.json).
   - Victory melody when all poses completed (C5→E5→G5→C6)
   - Web Audio API implementation with error handling
 - **Improved Registration Flow**: Seamless user experience without visual loading distractions
+
+### Face Registration Pre-Instructions (Latest Update)
+- **NEW**: Pre-registration instructions popup modal implemented in `src/app/face-register/page.tsx`
+- **Modal Features**:
+  - Automatic popup display when entering face registration page
+  - Comprehensive 5-step preparation guidelines with numbered visual indicators
+  - Purple theme matching application design (purple-500, purple-600, purple-100)
+  - Clear typography with icon-supported instructions
+  - Two-button action: "ย้อนกลับ" (back to register) and "เริ่มลงทะเบียน" (start registration)
+- **Instructions Content**:
+  1. **แสงสว่าง** (Lighting): Use adequate lighting, avoid backlighting
+  2. **เตรียมตัว** (Preparation): Remove glasses, hats, or face coverings
+  3. **ตำแหน่ง** (Position): Align face within the oval overlay
+  4. **ทำตามคำแนะนำ** (Follow Instructions): System will guide left-right turns and blinking
+  5. **อยู่นิ่ง** (Stay Still): Process takes 30-60 seconds with audio feedback
+- **UX Improvements**:
+  - Modal prevents direct access to face capture until user acknowledges instructions
+  - Responsive design with proper z-index layering
+  - Smooth transitions and hover effects
+  - User-friendly iconography with step-by-step visual flow
+- **State Management**: Added `showInstructions` state to control modal visibility
+- **Security Enhancement**: Ensures users are properly prepared before biometric capture
