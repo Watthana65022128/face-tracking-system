@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   try {
     console.log('=== Face Verify API Called ===')
     
-    const { userId, faceData } = await request.json()
+    const { userId, faceData, verifiedPoses } = await request.json()
 
     // ตรวจสอบข้อมูลที่รับเข้ามา
     if (!userId || !faceData) {
@@ -107,7 +107,23 @@ export async function POST(request: NextRequest) {
     
     // เพิ่มการตรวจสอบเพิ่มเติม - ต้องมีการตรงกับหลายท่า
     const validMatches = distances.filter(d => d.distance < threshold)
-    const isMatch = minDistance < threshold && validMatches.length > 0
+    
+    // ตรวจสอบการยืนยัน 4 ท่า (ถ้ามีข้อมูล verifiedPoses)
+    let poseVerificationPassed = true
+    if (verifiedPoses) {
+      const requiredPoses = ['front', 'left', 'right', 'blink']
+      const verifiedCount = requiredPoses.filter(pose => verifiedPoses[pose]).length
+      poseVerificationPassed = verifiedCount >= 4 // ต้องยืนยันครบทั้ง 4 ท่า
+      
+      console.log('Multi-pose verification:', {
+        verifiedPoses,
+        verifiedCount,
+        requiredPoses: requiredPoses.length,
+        passed: poseVerificationPassed
+      })
+    }
+    
+    const isMatch = minDistance < threshold && validMatches.length > 0 && poseVerificationPassed
 
     console.log('Face comparison result:', {
       distances,
@@ -115,9 +131,11 @@ export async function POST(request: NextRequest) {
       bestMatch,
       threshold,
       validMatches: validMatches.length,
+      poseVerificationPassed,
+      verifiedPoses,
       isMatch,
       user: `${user.firstName} ${user.lastName}`,
-      security: 'Enhanced verification with stricter threshold'
+      security: 'Enhanced verification with 4-pose confirmation and stricter threshold'
     })
 
     return NextResponse.json({
@@ -127,8 +145,10 @@ export async function POST(request: NextRequest) {
       allDistances: distances,
       threshold,
       message: isMatch 
-        ? `ยืนยันตัวตนสำเร็จ (ตรงกับท่า ${bestMatch})` 
-        : `ใบหน้าไม่ตรงกับข้อมูลที่ลงทะเบียน`
+        ? `ยืนยันตัวตนสำเร็จ (ตรงกับท่า ${bestMatch}${verifiedPoses ? ' + ยืนยัน 4 ท่าครบถ้วน' : ''})` 
+        : !poseVerificationPassed 
+          ? 'การยืนยัน 4 ท่าไม่ครบถ้วน กรุณาทำการยืนยันท่าให้ครบทั้ง 4 ท่า'
+          : `ใบหน้าไม่ตรงกับข้อมูลที่ลงทะเบียน`
     })
 
   } catch (error: any) {
