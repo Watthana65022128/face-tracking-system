@@ -101,7 +101,7 @@ export default function FaceRegisterPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">คำแนะนำก่อนลงทะเบียน</h2>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">คำแนะนำก่อนลงทะเบียนใบหน้า</h2>
                 <p className="text-gray-600 text-sm">กรุณาอ่านคำแนะนำต่อไปนี้ก่อนเริ่มลงทะเบียนใบหน้า</p>
               </div>
 
@@ -109,8 +109,8 @@ export default function FaceRegisterPage() {
                 <div className="flex items-start">
                   <div className="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5">1</div>
                   <div>
-                    <p className="font-medium text-gray-800">ตำแหน่ง</p>
-                    <p className="text-sm text-gray-600">ใช้ในสภาพแวดล้อมที่มีแสงสว่างเพียงพอ หลีกเลี่ยงแสงและเงาที่มีผลต่อการตรวจจับ</p>
+                    <p className="font-medium text-gray-800">แสงและเงา</p>
+                    <p className="text-sm text-gray-600">โปรดหลีกเลี่ยงแสงและเงาที่มีผลกระทบต่อการตรวจจับ</p>
                   </div>
                 </div>
 
@@ -148,7 +148,7 @@ export default function FaceRegisterPage() {
                 </div>
               </div>
 
-              <div className="flex space-x-3 hover:bg-purple-700 "> 
+              <div className="flex space-x-3 hover:cursor-pointer"> 
                 <button
                   onClick={() => setShowInstructions(false)}
                   className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
