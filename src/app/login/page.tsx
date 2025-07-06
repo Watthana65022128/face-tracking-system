@@ -24,12 +24,12 @@ export default function LoginPage() {
       const result = await response.json()
 
       if (response.ok) {
-        // Step 1: Email/Password success - now verify face
+        // ขั้นตอนที่ 1: อีเมล/รหัสผ่านถูกต้อง - ตรวจสอบใบหน้าต่อไป
         setCurrentUser(result.user)
         setShowFaceVerification(true)
         toast.success(`ยินดีต้อนรับคุณ ${result.user.firstName} กรุณายืนยันตัวตนด้วยใบหน้า`)
       } else {
-        // Handle different error cases
+        // จัดการกรณีข้อผิดพลาดต่าง ๆ
         if (response.status === 401) {
           setError('อีเมลหรือรหัสผ่านไม่ถูกต้อง')
         } else if (response.status === 404) {
@@ -51,7 +51,7 @@ export default function LoginPage() {
   }
 
   const handleFaceVerificationSuccess = () => {
-    // Step 2: Face verification success - complete login
+    // ขั้นตอนที่ 2: ตรวจสอบใบหน้าสำเร็จ - เสร็จสิ้นการเข้าสู่ระบบ
     if (currentUser) {
       localStorage.setItem('user', JSON.stringify(currentUser))
       localStorage.setItem('token', 'verified') // หรือใช้ JWT token จริง
@@ -76,7 +76,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <AuthForm type="login" onSubmit={handleLogin} loading={loading} />
           
-          {/* Error Message */}
+          {/* ข้อความแจ้งข้อผิดพลาด */}
           {error && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center">

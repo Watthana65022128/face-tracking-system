@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
     const { userId, faceData } = body
 
-    // Validate required fields
+    // ตรวจสอบฟิลด์ที่จำเป็น
     if (!userId || !faceData) {
       console.log('Missing required fields')
       return NextResponse.json(
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate face data format - now expecting multiple poses
+    // ตรวจสอบรูปแบบข้อมูลใบหน้า - คาดหวังว่าจะมีหลายท่า
     if (typeof faceData !== 'object' || faceData === null) {
       console.log('Invalid face data format: not an object')
       return NextResponse.json(
@@ -28,11 +28,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if we have the required poses
+    // ตรวจสอบว่ามีท่าที่จำเป็นหรือไม่
     const requiredPoses = ['front', 'left', 'right', 'blink']
     const providedPoses = Object.keys(faceData)
     
-    // Allow partial poses (at least front pose is required)
+    // อนุญาตท่าบางส่วน (ต้องมีท่าหน้าตรงอย่างน้อย)
     if (!faceData.front || !Array.isArray(faceData.front) || faceData.front.length !== 128) {
       console.log('Missing or invalid front pose data')
       return NextResponse.json(
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate each provided pose
+    // ตรวจสอบแต่ละท่าที่ให้มา
     for (const [pose, data] of Object.entries(faceData)) {
       if (!Array.isArray(data) || data.length !== 128) {
         return NextResponse.json(
@@ -55,11 +55,11 @@ export async function POST(request: NextRequest) {
 
     console.log('Updating user with face data...')
 
-    // Update user with face data
+    // อัปเดตข้อมูลผู้ใช้ด้วยข้อมูลใบหน้า
     const user = await prisma.user.update({
       where: { id: userId },
       data: { 
-        faceData: JSON.stringify(faceData) // บันทึกเป็น JSON string
+        faceData: JSON.stringify(faceData) // บันทึกเป็นสตริง JSON
       }
     })
 
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     console.error('Error details:', error)
     console.error('Error message:', error.message)
 
-    // Check for specific database errors
+    // ตรวจสอบข้อผิดพลาดเฉพาะของฐานข้อมูล
     if (error.code === 'P2025') {
       return NextResponse.json(
         { error: 'ไม่พบข้อมูลผู้ใช้' },

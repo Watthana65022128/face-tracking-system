@@ -125,7 +125,7 @@ export default function TrackingPage() {
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-100">
-        {/* Header */}
+        {/* ส่วนหัว */}
         <div className="bg-white shadow-sm border-b border-purple-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-4">
@@ -150,10 +150,10 @@ export default function TrackingPage() {
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* เนื้อหาหลัก */}
         <div className="max-w-4xl mx-auto p-6">
           <div className="grid gap-6">
-            {/* Status Card */}
+            {/* การ์ดสถานะ */}
             <Card className="p-8">
               <div className="text-center">
                 <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${
@@ -201,7 +201,7 @@ export default function TrackingPage() {
               </div>
             </Card>
 
-            {/* Info Cards */}
+            {/* การ์ดข้อมูล */}
             <div className="grid md:grid-cols-2 gap-6">
               <Card className="p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">ข้อมูลส่วนตัว</h3>
@@ -227,7 +227,7 @@ export default function TrackingPage() {
         </div>
       </div>
 
-      {/* Logout Confirmation Modal */}
+      {/* โมดอลยืนยันการออกจากระบบ */}
       <LogoutConfirmation
         isOpen={showLogoutConfirm}
         onConfirm={handleLogoutConfirm}

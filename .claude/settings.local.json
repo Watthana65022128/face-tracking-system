@@ -12,7 +12,9 @@
       "Bash(git pull:*)",
       "Bash(git diff:*)",
       "Bash(git stash:*)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(rg:*)",
+      "Bash(grep:*)"
     ],
     "deny": [
       "Bash(git reset --hard:*)",

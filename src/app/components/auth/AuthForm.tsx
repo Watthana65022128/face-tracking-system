@@ -33,66 +33,66 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
 
     const newErrors: Record<string, string> = {};
 
-    // Validate email for both login and register
+    // ตรวจสอบความถูกต้องอีเมลสำหรับทั้งการเข้าสู่ระบบและการลงทะเบียน
     const emailValidation = validateEmail(formData.email);
     if (!emailValidation.isValid) {
       newErrors.email = emailValidation.error || "อีเมลไม่ถูกต้อง";
     }
 
-    // Validate for registration
+    // ตรวจสอบความถูกต้องสำหรับการลงทะเบียน
     if (type === "register") {
-      // Validate title
+      // ตรวจสอบความถูกต้องคำนำหน้าชื่อ
       const titleValidation = validateTitle(formData.title);
       if (!titleValidation.isValid) {
         newErrors.title = titleValidation.error || "กรุณาเลือกคำนำหน้าชื่อ";
       }
 
-      // Validate first name
+      // ตรวจสอบความถูกต้องชื่อ
       const firstNameValidation = validateName(formData.firstName);
       if (!firstNameValidation.isValid) {
         newErrors.firstName = firstNameValidation.error || "ชื่อไม่ถูกต้อง";
       }
 
-      // Validate last name
+      // ตรวจสอบความถูกต้องนามสกุล
       const lastNameValidation = validateName(formData.lastName);
       if (!lastNameValidation.isValid) {
         newErrors.lastName = lastNameValidation.error || "นามสกุลไม่ถูกต้อง";
       }
 
-      // Validate student ID
+      // ตรวจสอบความถูกต้องรหัสผู้เรียน
       const studentIdValidation = validateStudentId(formData.studentId);
       if (!studentIdValidation.isValid) {
         newErrors.studentId = studentIdValidation.error || "รหัสผู้เรียนไม่ถูกต้อง";
       }
 
-      // Validate phone number
+      // ตรวจสอบความถูกต้องเบอร์โทรศัพท์
       const phoneValidation = validatePhoneNumber(formData.phoneNumber);
       if (!phoneValidation.isValid) {
         newErrors.phoneNumber = phoneValidation.error || "เบอร์โทรศัพท์ไม่ถูกต้อง";
       }
 
-      // Validate password
+      // ตรวจสอบความถูกต้องรหัสผ่าน
       const passwordValidation = validatePassword(formData.password);
       if (!passwordValidation.isValid) {
         newErrors.password = "รหัสผ่านไม่ปลอดภัยเพียงพอ";
       }
 
-      // Validate password confirmation
+      // ตรวจสอบความถูกต้องการยืนยันรหัสผ่าน
       if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = "รหัสผ่านไม่ตรงกัน";
       }
     }
 
-    // Check for duplicate errors (only for register)
+    // ตรวจสอบข้อผิดพลาดข้อมูลซ้ำ (เฉพาะการลงทะเบียนเท่านั้น)
     const allErrors = type === "register" ? { ...newErrors, ...duplicateErrors } : newErrors;
     
-    // If there are any errors, show them and stop submission
+    // หากมีข้อผิดพลาด ให้แสดงและหยุดการส่งข้อมูล
     if (Object.keys(allErrors).length > 0) {
       setErrors(allErrors);
       return;
     }
 
-    // Use normalized email for submission if validation passed
+    // ใช้อีเมลที่ปรับแล้วสำหรับการส่งข้อมูล
     const submitData = { ...formData };
     if (emailValidation.normalizedEmail) {
       submitData.email = emailValidation.normalizedEmail;
@@ -137,7 +137,7 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
       const value = e.target.value;
       setFormData((prev) => ({ ...prev, [field]: value }));
       
-      // Clear errors when user types
+      // ล้างข้อผิดพลาดเมื่อผู้ใช้พิมพ์
       if (errors[field]) {
         setErrors((prev) => ({ ...prev, [field]: "" }));
       }
@@ -156,7 +156,7 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
     
     // ตรวจสอบเฉพาะฟิลด์ที่ต้องการ และเฉพาะในกรณีที่เป็น register เท่านั้น
     if (type === "register" && ['email', 'studentId', 'phoneNumber'].includes(field) && value) {
-      // ตรวจสอบการ validate พื้นฐานก่อน
+      // ตรวจสอบการตรวจสอบความถูกต้องพื้นฐานก่อน
       let isValidFormat = true;
       
       if (field === 'email') {
@@ -170,7 +170,7 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
         isValidFormat = phoneValidation.isValid;
       }
       
-      // ถ้า format ถูกต้องแล้วค่อยตรวจสอบซ้ำ
+      // ถ้ารูปแบบถูกต้องแล้วค่อยตรวจสอบซ้ำ
       if (isValidFormat) {
         checkDuplicate(field, value);
       }
@@ -379,7 +379,7 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
             placeholder="••••••••"
             required
             showStrength={false}
-            showToggle={false} // ไม่แสดงปุ่ม toggle สำหรับช่องยืนยันรหัสผ่าน
+            showToggle={false} // ไม่แสดงปุ่มสลับการแสดงช่องยืนยันรหัสผ่าน
             error={errors.confirmPassword}
           />
         )}

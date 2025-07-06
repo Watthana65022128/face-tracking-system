@@ -1,4 +1,4 @@
-// app/components/ui/LogoutConfirmation.tsx
+// คอมโพเนนต์ยืนยันการออกจากระบบ
 'use client'
 import { Button } from '@/app/components/ui/Button'
 import { Card } from '@/app/components/ui/Card'

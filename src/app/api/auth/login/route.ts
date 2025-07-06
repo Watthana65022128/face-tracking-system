@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
 
-    // Validate email format and get normalized email
+    // ตรวจสอบรูปแบบอีเมลและรับอีเมลที่ได้ปรับปรุงแล้ว
     const emailValidation = validateEmail(email)
     if (!emailValidation.isValid) {
       return NextResponse.json(
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     
     const normalizedEmail = emailValidation.normalizedEmail!
 
-    // Find user
+    // ค้นหาผู้ใช้
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail }
     })
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check password
+    // ตรวจสอบรหัสผ่าน
     const isPasswordValid = await bcrypt.compare(password, user.password)
 
     if (!isPasswordValid) {
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create JWT token
+    // สร้าง JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET || 'fallback-secret',

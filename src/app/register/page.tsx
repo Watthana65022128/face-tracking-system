@@ -33,7 +33,7 @@ export default function RegisterPage() {
       console.log('Response data:', result)
 
       if (response.ok) {
-        // สำเร็จ - บันทึกข้อมูล user และไปหน้าลงทะเบียนใบหน้า
+        // สำเร็จ - บันทึกข้อมูลผู้ใช้และไปหน้าลงทะเบียนใบหน้า
         if (result.user) {
           localStorage.setItem('tempUserId', result.user.id)
           localStorage.setItem('tempUser', JSON.stringify(result.user))
@@ -41,13 +41,13 @@ export default function RegisterPage() {
         
         toast.success('สมัครสมาชิกสำเร็จ กรุณาลงทะเบียนใบหน้าเพื่อเพิ่มความปลอดภัย')
         
-        // Redirect ไปหน้าลงทะเบียนใบหน้าหลังจาก 2 วินาที
+        // เปลี่ยนไปหน้าลงทะเบียนใบหน้าหลังจาก 2 วินาที
         setTimeout(() => {
           window.location.href = '/face-register'
         }, 2000)
         
       } else {
-        // มี error
+        // มีข้อผิดพลาด
         toast.error(result.error || 'เกิดข้อผิดพลาด')
       }
       

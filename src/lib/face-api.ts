@@ -3,17 +3,17 @@ import * as faceapi from "face-api.js";
 let isModelLoaded = false;
 let isLoading = false;
 
-// Model URLs from CDN
+// URL ของโมเดลจาก CDN
 const MODEL_URL = "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights";
 
 export async function loadFaceApiModels() {
   if (isModelLoaded) {
-    console.log("Models already loaded");
+    console.log("โมเดลถูกโหลดแล้ว");
     return;
   }
 
   if (isLoading) {
-    console.log("Models are being loaded...");
+    console.log("กำลังโหลดโมเดล...");
     return new Promise((resolve) => {
       const checkLoaded = setInterval(() => {
         if (isModelLoaded) {
@@ -26,7 +26,7 @@ export async function loadFaceApiModels() {
 
   try {
     isLoading = true;
-    console.log("Loading face-api models...");
+    console.log("กำลังโหลดโมเดล face-api...");
 
     // โหลดโมเดลที่จำเป็นสำหรับการตรวจจับท่าและการวิเคราะห์
     await Promise.all([
@@ -38,11 +38,11 @@ export async function loadFaceApiModels() {
 
     isModelLoaded = true;
     isLoading = false;
-    console.log("Face-api models loaded successfully");
+    console.log("โหลดโมเดล face-api สำเร็จ");
     
   } catch (error) {
     isLoading = false;
-    console.error("Error loading face-api models:", error);
+    console.error("ข้อผิดพลาดในการโหลดโมเดล face-api:", error);
     throw new Error("ไม่สามารถโหลดโมเดล AI ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต");
   }
 }
@@ -57,15 +57,15 @@ export async function detectFaceAndGetDescriptor(
       await loadFaceApiModels();
     }
 
-    console.log("Detecting face...");
+    console.log("กำลังตรวจจับใบหน้า...");
 
     // ตั้งค่าการตรวจจับใบหน้า
     const detectionOptions = new faceapi.TinyFaceDetectorOptions({
       inputSize: 416, // ขนาดที่ใหญ่ขึ้นเพื่อความแม่นยำ
-      scoreThreshold: 0.5 // threshold สำหรับการตรวจจับ
+      scoreThreshold: 0.5 // เกณฑ์สำหรับการตรวจจับ
     });
 
-    // ตรวจจับใบหน้าพร้อม landmarks และ descriptor
+    // ตรวจจับใบหน้าพร้อมจุดสำคัญและลายเซ็นใบหน้า
     const detection = await faceapi
       .detectSingleFace(imageElement, detectionOptions)
       .withFaceLandmarks()
@@ -80,13 +80,13 @@ export async function detectFaceAndGetDescriptor(
       throw new Error("คุณภาพการตรวจจับใบหน้าไม่เพียงพอ กรุณาปรับแสงและตำแหน่ง");
     }
 
-    console.log("Face detected successfully, score:", detection.detection.score);
+    console.log("ตรวจจับใบหน้าสำเร็จ, คะแนน:", detection.detection.score);
 
-    // ส่งคืน face descriptor
+    // ส่งคืนลายเซ็นใบหน้า
     return Array.from(detection.descriptor);
 
   } catch (error: any) {
-    console.error("Face detection error:", error);
+    console.error("ข้อผิดพลาดในการตรวจจับใบหน้า:", error);
     
     if (error.message.includes("ไม่พบใบหน้า") || error.message.includes("คุณภาพ")) {
       throw error; // ส่งต่อ error message ที่เป็นไทย
@@ -112,11 +112,11 @@ export function compareFaceDescriptors(
 
     // คำนวณ Euclidean distance
     const distance = faceapi.euclideanDistance(descriptor1, descriptor2);
-    console.log("Face comparison distance:", distance);
+    console.log("ระยะห่างการเปรียบเทียบใบหน้า:", distance);
     
     return distance;
   } catch (error) {
-    console.error("Face comparison error:", error);
+    console.error("ข้อผิดพลาดในการเปรียบเทียบใบหน้า:", error);
     throw error;
   }
 }
@@ -183,8 +183,8 @@ export async function detectFacePose(
     // ตรวจจับการกระพริบตา
     const isBlinking = detectBlinking(landmarks);
     
-    // Debug logging สำหรับการตรวจจับท่า
-    console.log('Face pose detection:', {
+    // การบันทึกข้อมูลการดีบักสำหรับการตรวจจับท่า
+    console.log('การตรวจจับท่าใบหน้า:', {
       pose: pose.pose,
       yaw: pose.yaw.toFixed(2),
       confidence: detection.detection.score.toFixed(3),
@@ -201,7 +201,7 @@ export async function detectFacePose(
     };
 
   } catch (error) {
-    console.error('Face pose detection error:', error);
+    console.error('ข้อผิดพลาดในการตรวจจับท่าใบหน้า:', error);
     return {
       detected: false,
       pose: 'unknown',
@@ -285,7 +285,7 @@ function detectBlinking(landmarks: faceapi.FaceLandmarks68): boolean {
       Math.pow(eye.p1.x - eye.p4.x, 2) + Math.pow(eye.p1.y - eye.p4.y, 2)
     );
     
-    // EAR = (vertical1 + vertical2) / (2 * horizontal)
+    // EAR = (แนวตั้ง1 + แนวตั้ง2) / (2 * แนวนอน)
     return (vertical1 + vertical2) / (2 * horizontal);
   }
   
@@ -293,10 +293,10 @@ function detectBlinking(landmarks: faceapi.FaceLandmarks68): boolean {
   const rightEAR = calculateEAR(rightEyePoints);
   const avgEAR = (leftEAR + rightEAR) / 2;
   
-  // threshold สำหรับการกระพริบ (ค่าต่ำแสดงว่าตาปิด)
+  // เกณฑ์สำหรับการกระพริบ (ค่าต่ำแสดงว่าตาปิด)
   const blinkThreshold = 0.25;
   
-  console.log('Blink detection:', {
+  console.log('การตรวจจับการกระพริบ:', {
     leftEAR: leftEAR.toFixed(3),
     rightEAR: rightEAR.toFixed(3),
     avgEAR: avgEAR.toFixed(3),

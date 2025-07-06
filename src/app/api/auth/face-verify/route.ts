@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     
     const { userId, faceData } = await request.json()
 
-    // Validate input
+    // ตรวจสอบข้อมูลที่รับเข้ามา
     if (!userId || !faceData) {
       return NextResponse.json(
         { error: 'ข้อมูลไม่ครบถ้วน' },
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate face data format
+    // ตรวจสอบรูปแบบข้อมูลใบหน้า
     if (!Array.isArray(faceData) || faceData.length !== 128) {
       return NextResponse.json(
         { error: 'ข้อมูลใบหน้าไม่ถูกต้อง' },
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     console.log('Getting stored face data for user:', userId)
 
-    // Get stored face data
+    // ดึงข้อมูลใบหน้าที่บันทึกไว้
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { faceData: true, firstName: true, lastName: true }
@@ -61,10 +61,10 @@ export async function POST(request: NextRequest) {
 
     console.log('Comparing face descriptors...')
 
-    // Compare face descriptors
+    // เปรียบเทียบข้อมูลลักษณะใบหน้า
     let storedFaceData: any
     
-    // Parse JSON data if it's stored as string
+    // แยกข้อมูล JSON ถ้าบันทึกเป็นสตริง
     if (typeof user.faceData === 'string') {
       storedFaceData = JSON.parse(user.faceData)
     } else {
@@ -75,16 +75,16 @@ export async function POST(request: NextRequest) {
     let minDistance = Infinity
     let bestMatch = ''
     
-    // Check if stored data is multi-pose (object) or single pose (array)
+    // ตรวจสอบว่าข้อมูลที่บันทึกเป็นหลายท่า (object) หรือท่าเดียว (array)
     if (Array.isArray(storedFaceData)) {
-      // Legacy single pose data
+      // ข้อมูลท่าเดียวรุ่นเก่า
       console.log('Using legacy single pose comparison')
       const distance = euclideanDistance(faceData, storedFaceData)
       distances.push({ pose: 'legacy', distance })
       minDistance = distance
       bestMatch = 'legacy'
     } else {
-      // Multi-pose data - compare against all stored poses
+      // ข้อมูลหลายท่า - เปรียบเทียบกับทุกท่าที่บันทึกไว้
       console.log('Using multi-pose comparison')
       const poses = Object.keys(storedFaceData)
       
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Face matching threshold - use the best match
+    // เกณฑ์การจับคู่ใบหน้า - ใช้การจับคู่ที่ดีที่สุด
     // ปรับ threshold ให้เข้มงวดขึ้นเพื่อความปลอดภัย
     const threshold = 0.4
     

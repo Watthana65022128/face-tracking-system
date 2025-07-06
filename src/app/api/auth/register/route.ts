@@ -1,4 +1,4 @@
-// app/api/auth/register/route.ts
+// เอพีไอการสมัครสมาชิก
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
@@ -12,13 +12,13 @@ export async function POST(request: NextRequest) {
   try {
     console.log('=== Register API Called ===')
     
-    // Parse request body
+    // แยกวิเคราะห์ข้อมูลที่ส่งมา
     const body = await request.json()
     console.log('Request body:', body)
     
     const { email, password, title, firstName, lastName, studentId, phoneNumber } = body
 
-    // Validate required fields
+    // ตรวจสอบฟิลด์ที่จำเป็น
     if (!email || !password || !title || !firstName || !lastName) {
       console.log('Missing required fields')
       return NextResponse.json(
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate title
+    // ตรวจสอบคำนำหน้าชื่อ
     const titleValidation = validateTitle(title)
     if (!titleValidation.isValid) {
       return NextResponse.json(
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate first name
+    // ตรวจสอบชื่อ
     const firstNameValidation = validateName(firstName)
     if (!firstNameValidation.isValid) {
       return NextResponse.json(
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate last name
+    // ตรวจสอบนามสกุล
     const lastNameValidation = validateName(lastName)
     if (!lastNameValidation.isValid) {
       return NextResponse.json(
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate student ID if provided
+    // ตรวจสอบรหัสผู้เรียนถ้ามีการระบุ
     if (studentId) {
       const studentIdValidation = validateStudentId(studentId)
       if (!studentIdValidation.isValid) {
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate phone number if provided
+    // ตรวจสอบเบอร์โทรศัพท์ถ้ามีการระบุ
     if (phoneNumber) {
       const phoneValidation = validatePhoneNumber(phoneNumber)
       if (!phoneValidation.isValid) {
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate email format and get normalized email
+    // ตรวจสอบรูปแบบอีเมลและรับอีเมลที่ปรับแล้ว
     const emailValidation = validateEmail(email)
     if (!emailValidation.isValid) {
       return NextResponse.json(
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     
     const normalizedEmail = emailValidation.normalizedEmail!
 
-    // Validate password strength using the comprehensive validation function
+    // ตรวจสอบความแข็งแกร่งของรหัสผ่านโดยใช้ฟังก์ชันตรวจสอบแบบครอบคลุม
     const passwordValidation = validatePassword(password)
     if (!passwordValidation.isValid) {
       return NextResponse.json(
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     console.log('Checking for existing user...')
     
-    // Check if user already exists
+    // ตรวจสอบว่าผู้ใช้มีอยู่แล้วหรือไม่
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail }
     })
@@ -116,12 +116,12 @@ export async function POST(request: NextRequest) {
 
     console.log('Hashing password...')
     
-    // Hash password
+    // เข้ารหัสรหัสผ่าน
     const hashedPassword = await bcrypt.hash(password, 12)
 
     console.log('Creating user in database...')
     
-    // Create user
+    // สร้างผู้ใช้
     const user = await prisma.user.create({
       data: {
         email: normalizedEmail,
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
 
     console.log('User created successfully:', user.id)
 
-    // Return success response (ไม่ส่ง password กลับ)
+    // ส่งคืนผลลัพธ์ที่สำเร็จ (ไม่ส่ง password กลับ)
     return NextResponse.json({
       success: true,
       message: 'สมัครสมาชิกสำเร็จ',
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     console.error('Error message:', error.message)
     console.error('Error stack:', error.stack)
 
-    // Check for specific database errors
+    // ตรวจสอบข้อผิดพลาดฐานข้อมูลเฉพาะ
     if (error.code === 'P2002') {
       return NextResponse.json(
         { error: 'อีเมลนี้มีการใช้งานแล้ว' },

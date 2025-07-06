@@ -68,16 +68,16 @@ export function validateEmail(email: string): { isValid: boolean; error?: string
     return { isValid: false, error: 'กรุณากรอกอีเมล' }
   }
 
-  // Normalize email: trim and convert to lowercase
+  // ปรับรูปแบบอีเมล: ตัดช่องว่างและแปลงเป็นตัวพิมพ์เล็ก
   const normalizedEmail = email.trim().toLowerCase()
 
-  // Check basic format
+  // ตรวจสอบรูปแบบพื้นฐาน
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(normalizedEmail)) {
     return { isValid: false, error: 'รูปแบบอีเมลไม่ถูกต้อง' }
   }
 
-  // Check for common invalid patterns
+  // ตรวจสอบรูปแบบที่ผิดพลาดทั่วไป
   if (normalizedEmail.includes('..') || 
       normalizedEmail.startsWith('.') || 
       normalizedEmail.endsWith('.') ||
@@ -86,30 +86,30 @@ export function validateEmail(email: string): { isValid: boolean; error?: string
     return { isValid: false, error: 'รูปแบบอีเมลไม่ถูกต้อง' }
   }
 
-  // Check length constraints
+  // ตรวจสอบข้อจำกัดของความยาว
   if (normalizedEmail.length > 254) {
     return { isValid: false, error: 'อีเมลยาวเกินไป' }
   }
 
   const [localPart, domain] = normalizedEmail.split('@')
   
-  // Check local part length
+  // ตรวจสอบความยาวส่วนหน้า @
   if (localPart.length > 64) {
     return { isValid: false, error: 'ส่วนหน้า @ ของอีเมลยาวเกินไป' }
   }
 
-  // Check domain part
+  // ตรวจสอบส่วนโดเมน
   if (domain.length > 253) {
     return { isValid: false, error: 'ส่วนหลัง @ ของอีเมลยาวเกินไป' }
   }
 
-  // Check for valid domain format with minimum TLD length
+  // ตรวจสอบรูปแบบโดเมนที่ถูกต้องและความยาวขั้นต่ำของ TLD
   const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
   if (!domainRegex.test(domain)) {
     return { isValid: false, error: 'โดเมนของอีเมลไม่ถูกต้อง' }
   }
 
-  // Check for minimum TLD length (at least 2 characters)
+  // ตรวจสอบความยาวขั้นต่ำของ TLD (อย่างน้อย 2 ตัวอักษร)
   const domainParts = domain.split('.')
   const tld = domainParts[domainParts.length - 1]
   if (tld.length < 2) {
@@ -120,20 +120,20 @@ export function validateEmail(email: string): { isValid: boolean; error?: string
 }
 
 export function validateStudentId(studentId: string): { isValid: boolean; error?: string } {
-  // Allow empty student ID (optional field)
+  // อนุญาตให้รหัสผู้เรียนว่างได้ (ช่องข้อมูลเสริม)
   if (!studentId || studentId.trim().length === 0) {
     return { isValid: true }
   }
 
   const trimmedId = studentId.trim()
 
-  // Check if contains only numbers
+  // ตรวจสอบว่าเป็นตัวเลขเท่านั้น
   const numberRegex = /^[0-9]+$/
   if (!numberRegex.test(trimmedId)) {
     return { isValid: false, error: 'รหัสผู้เรียนต้องเป็นตัวเลขเท่านั้น' }
   }
 
-  // Check length (typically 7 digits for student ID)
+  // ตรวจสอบความยาว (โดยปกติรหัสผู้เรียนจะมี 7 หลัก)
   if (trimmedId.length < 6 || trimmedId.length > 10) {
     return { isValid: false, error: 'รหัสผู้เรียนต้องมี 6-10 หลัก' }
   }
@@ -159,25 +159,25 @@ export function validateTitle(title: string): { isValid: boolean; error?: string
 }
 
 export function validatePhoneNumber(phoneNumber: string): { isValid: boolean; error?: string } {
-  // Allow empty phone number (optional field)
+  // อนุญาตให้เบอร์โทรศัพท์ว่างได้ (ช่องข้อมูลเสริม)
   if (!phoneNumber || phoneNumber.trim().length === 0) {
     return { isValid: true }
   }
 
   const trimmedPhone = phoneNumber.trim()
 
-  // Check if contains only numbers
+  // ตรวจสอบว่าเป็นตัวเลขเท่านั้น
   const numberRegex = /^[0-9]+$/
   if (!numberRegex.test(trimmedPhone)) {
     return { isValid: false, error: 'เบอร์โทรศัพท์ต้องเป็นตัวเลขเท่านั้น' }
   }
 
-  // Check length (must be exactly 10 digits)
+  // ตรวจสอบความยาว (ต้องมีเท่ากับ 10 หลัก)
   if (trimmedPhone.length !== 10) {
     return { isValid: false, error: 'เบอร์โทรศัพท์ต้องมี 10 หลักเท่านั้น' }
   }
 
-  // Check if starts with valid Thai mobile prefixes
+  // ตรวจสอบว่าเริ่มต้นด้วยเลขนำหน้าโทรศัพท์ไทยที่ถูกต้อง
   const validPrefixes = ['08', '09', '06', '02']
   const prefix = trimmedPhone.substring(0, 2)
   if (!validPrefixes.includes(prefix)) {
@@ -192,7 +192,7 @@ export function validateName(name: string): { isValid: boolean; error?: string }
     return { isValid: false, error: 'กรุณากรอกชื่อ' }
   }
   
-  // Check if name contains only Thai and English alphabetic characters and spaces
+  // ตรวจสอบว่าชื่อประกอบด้วยตัวอักษรไทยและอังกฤษและช่องว่างเท่านั้น
   const nameRegex = /^[a-zA-Zก-๙\s]+$/
   if (!nameRegex.test(name)) {
     return { isValid: false, error: 'ชื่อและนามสกุลต้องเป็นตัวอักษรเท่านั้น' }

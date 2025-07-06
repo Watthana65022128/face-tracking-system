@@ -26,19 +26,19 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Basic states
+  // สถานะพื้นฐาน
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState("");
   const [isModelLoading, setIsModelLoading] = useState(true);
   
-  // Multi-pose capture states
+  // สถานะการจับภาพหลายท่า
   const [currentPoseIndex, setCurrentPoseIndex] = useState(0);
   const [capturedPoses, setCapturedPoses] = useState<{ [key in PoseType]?: number[] }>({});
   const [isCapturingPose, setIsCapturingPose] = useState(false);
   const [poseProgress, setPoseProgress] = useState(0);
   const [isAllPosesComplete, setIsAllPosesComplete] = useState(false);
   
-  // Real-time detection states
+  // สถานะการตรวจจับแบบเรียลไทม์
   const [currentDetectedPose, setCurrentDetectedPose] = useState<'front' | 'left' | 'right' | 'unknown'>('unknown');
   const [poseConfidence, setPoseConfidence] = useState(0);
   const [poseStableCount, setPoseStableCount] = useState(0);
@@ -64,7 +64,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
     };
   }, []);
   
-  // Start continuous pose detection when streaming
+  // เริ่มการตรวจจับท่าอย่างต่อเนื่องเมื่อสตรีมมิ่ง
   useEffect(() => {
     if (isStreaming && !isModelLoading && !isAllPosesComplete) {
       startContinuousDetection();
@@ -75,7 +75,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
     return () => stopContinuousDetection();
   }, [isStreaming, isModelLoading, isAllPosesComplete]);
   
-  // Auto-capture when pose is stable
+  // จับภาพอัตโนมัติเมื่อท่าคงที่
   useEffect(() => {
     if (!autoCapturing && !isCapturingPose && !isAllPosesComplete) {
       const targetPose = currentPose.type;
@@ -84,7 +84,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
       if (isReady) {
         setPoseStableCount(prev => prev + 1);
         
-        // If pose is stable for 10 consecutive detections (~1 second), auto-capture
+        // หากท่าคงที่เป็นเวลา 10 ครั้งติดต่อกัน (~1 วินาที) จับภาพอัตโนมัติ
         if (poseStableCount >= 10) {
           handleAutoCapture();
         }
@@ -101,7 +101,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
       await startCamera();
     } catch (err) {
       setError("ไม่สามารถโหลดโมเดล AI ได้ กรุณาลองใหม่อีกครั้ง");
-      console.error("Face API initialization error:", err);
+      console.error("ข้อผิดพลาดในการเริ่มต้น Face API:", err);
     } finally {
       setIsModelLoading(false);
     }
@@ -122,7 +122,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
         
         videoRef.current.onloadedmetadata = () => {
           videoRef.current?.play().catch(err => {
-            console.error('Video play error:', err)
+            console.error('ข้อผิดพลาดในการเล่นวิดีโอ:', err)
             setError('ไม่สามารถเริ่มวิดีโอได้')
           })
         }
@@ -133,12 +133,12 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
         }
         
         videoRef.current.onerror = (err) => {
-          console.error('Video error:', err)
+          console.error('ข้อผิดพลาดวิดีโอ:', err)
           setError('เกิดข้อผิดพลาดกับวิดีโอ กรุณาลองใหม่')
         }
       }
     } catch (err: any) {
-      console.error('Camera error:', err)
+      console.error('ข้อผิดพลาดกล้อง:', err)
       
       if (err.name === 'NotAllowedError') {
         setError('กรุณาอนุญาตการใช้กล้องในเบราว์เซอร์ คลิกที่ไอคอนกล้องในแถบที่อยู่')
@@ -181,7 +181,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
             setPoseStableCount(0);
           }
         } catch (error) {
-          console.error('Continuous detection error:', error);
+          console.error('ข้อผิดพลาดในการตรวจจับอย่างต่อเนื่อง:', error);
         }
       }
     }, 100);
@@ -200,7 +200,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       
       // เสียงสำหรับแต่ละขั้นตอน (โทนเสียงเพิ่มขึ้น)
-      const frequencies = [523.25, 587.33, 659.25, 698.46]; // C5, D5, E5, F5
+      const frequencies = [523.25, 587.33, 659.25, 698.46]; // โนตดนตรี C5, D5, E5, F5
       const frequency = frequencies[currentPoseIndex] || 523.25;
       
       const oscillator = audioContext.createOscillator();
@@ -218,7 +218,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.3);
     } catch (error) {
-      console.log('Audio context not supported or blocked');
+      console.log('ระบบเสียงไม่ได้รับการสนับสนุนหรือถูกบล็อก');
     }
   };
 
@@ -227,7 +227,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
       // เสียงสำหรับเสร็จสิ้นทั้งหมด (แบบมีท่วงทำนอง)
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       
-      const melody = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+      const melody = [523.25, 659.25, 783.99, 1046.50]; // ท่วงทำนอง C5, E5, G5, C6
       
       melody.forEach((frequency, index) => {
         const oscillator = audioContext.createOscillator();
@@ -247,7 +247,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
         oscillator.stop(startTime + 0.4);
       });
     } catch (error) {
-      console.log('Audio context not supported or blocked');
+      console.log('ระบบเสียงไม่ได้รับการสนับสนุนหรือถูกบล็อก');
     }
   };
 
@@ -289,7 +289,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
 
     } catch (err: any) {
       setError(err.message || "ไม่สามารถตรวจจับใบหน้าได้ กรุณาลองใหม่");
-      console.error("Face capture error:", err);
+      console.error("ข้อผิดพลาดในการจับภาพใบหน้า:", err);
       setIsCapturingPose(false);
       setAutoCapturing(false);
     }

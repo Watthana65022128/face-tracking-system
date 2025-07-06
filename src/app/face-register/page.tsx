@@ -8,14 +8,14 @@ export default function FaceRegisterPage() {
   const [showInstructions, setShowInstructions] = useState(true)
 
   useEffect(() => {
-    // ดึงข้อมูล user จาก localStorage หลังจากสมัครสมาชิก
+    // ดึงข้อมูลผู้ใช้จาก localStorage หลังจากสมัครสมาชิก
     const tempUser = localStorage.getItem('tempUser')
     const tempUserId = localStorage.getItem('tempUserId')
     
     if (tempUser && tempUserId) {
       setUserData(JSON.parse(tempUser))
     } else {
-      // ถ้าไม่มีข้อมูล redirect กลับไปหน้า register
+      // ถ้าไม่มีข้อมูล เปลี่ยนกลับไปหน้าลงทะเบียน
       alert('กรุณาสมัครสมาชิกก่อน')
       window.location.href = '/register'
     }
@@ -44,7 +44,7 @@ export default function FaceRegisterPage() {
       const result = await response.json()
 
       if (response.ok) {
-        // สำเร็จ - ลบข้อมูลชั่วคราวและไปหน้า login
+        // สำเร็จ - ลบข้อมูลชั่วคราวและไปหน้าเข้าสู่ระบบ
         localStorage.removeItem('tempUserId')
         localStorage.removeItem('tempUser')
         
@@ -76,7 +76,7 @@ export default function FaceRegisterPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-100 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
-        {/* Welcome Message */}
+        {/* ข้อความต้อนรับ */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
             ยินดีต้อนรับคุณ {userData.firstName}
@@ -86,12 +86,12 @@ export default function FaceRegisterPage() {
           </p>
         </div>
 
-        {/* Face Capture Component - Only show when instructions are dismissed */}
+        {/* คอมโพเนนต์จับภาพใบหน้า - แสดงเฉพาะเมื่อปิดคำแนะนำแล้ว */}
         {!showInstructions && (
           <FaceCapture onCapture={handleFaceCapture} loading={loading} />
         )}
 
-        {/* Instructions Popup Modal */}
+        {/* โมดอลคำแนะนำแบบป๊อปอัพ */}
         {showInstructions && (
           <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
