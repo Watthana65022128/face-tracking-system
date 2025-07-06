@@ -110,7 +110,7 @@ export default function FaceRegisterPage() {
                   <div className="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5">1</div>
                   <div>
                     <p className="font-medium text-gray-800">ตำแหน่ง</p>
-                    <p className="text-sm text-gray-600">ใช้ในสภาพแวดล้อมที่มีแสงสว่างเพียงพอ หลีกเลี่ยงแสงส่องจากด้านหลัง</p>
+                    <p className="text-sm text-gray-600">ใช้ในสภาพแวดล้อมที่มีแสงสว่างเพียงพอ หลีกเลี่ยงแสงและเงาที่มีผลต่อการตรวจจับ</p>
                   </div>
                 </div>
 
@@ -137,14 +137,6 @@ export default function FaceRegisterPage() {
                     <p className="text-sm text-gray-600">ระบบจะสั่งให้หันหน้าไปทางซ้าย-ขวา และกะพริบตา</p>
                   </div>
                 </div>
-
-                <div className="flex items-start">
-                  <div className="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5">5</div>
-                  <div>
-                    <p className="font-medium text-gray-800">อยู่นิ่ง</p>
-                    <p className="text-sm text-gray-600">ใช้เวลาประมาณ 30-60 วินาที จะมีเสียงแจ้งเตือนเมื่อสำเร็จ</p>
-                  </div>
-                </div>
               </div>
 
               <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg mb-6">
@@ -156,8 +148,7 @@ export default function FaceRegisterPage() {
                 </div>
               </div>
 
-              <div className="flex space-x-3">
-  
+              <div className="flex space-x-3 hover:bg-purple-700 "> 
                 <button
                   onClick={() => setShowInstructions(false)}
                   className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
