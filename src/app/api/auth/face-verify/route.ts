@@ -108,12 +108,12 @@ export async function POST(request: NextRequest) {
     // เพิ่มการตรวจสอบเพิ่มเติม - ต้องมีการตรงกับหลายท่า
     const validMatches = distances.filter(d => d.distance < threshold)
     
-    // ตรวจสอบการยืนยัน 4 ท่า (ถ้ามีข้อมูล verifiedPoses)
+    // ตรวจสอบการยืนยัน 3 ท่า (ถ้ามีข้อมูล verifiedPoses)
     let poseVerificationPassed = true
     if (verifiedPoses) {
-      const requiredPoses = ['front', 'left', 'right', 'blink']
+      const requiredPoses = ['front', 'left', 'right']
       const verifiedCount = requiredPoses.filter(pose => verifiedPoses[pose]).length
-      poseVerificationPassed = verifiedCount >= 4 // ต้องยืนยันครบทั้ง 4 ท่า
+      poseVerificationPassed = verifiedCount >= 3 // ต้องยืนยันครบทั้ง 3 ท่า
       
       console.log('Multi-pose verification:', {
         verifiedPoses,
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
       verifiedPoses,
       isMatch,
       user: `${user.firstName} ${user.lastName}`,
-      security: 'Enhanced verification with 4-pose confirmation and stricter threshold'
+      security: 'Enhanced verification with 3-pose confirmation and stricter threshold'
     })
 
     return NextResponse.json({
@@ -145,9 +145,9 @@ export async function POST(request: NextRequest) {
       allDistances: distances,
       threshold,
       message: isMatch 
-        ? `ยืนยันตัวตนสำเร็จ (ตรงกับท่า ${bestMatch}${verifiedPoses ? ' + ยืนยัน 4 ท่าครบถ้วน' : ''})` 
+        ? `ยืนยันตัวตนสำเร็จ (ตรงกับท่า ${bestMatch}${verifiedPoses ? ' + ยืนยัน 3 ท่าครบถ้วน' : ''})` 
         : !poseVerificationPassed 
-          ? 'การยืนยัน 4 ท่าไม่ครบถ้วน กรุณาทำการยืนยันท่าให้ครบทั้ง 4 ท่า'
+          ? 'การยืนยัน 3 ท่าไม่ครบถ้วน กรุณาทำการยืนยันท่าให้ครบทั้ง 3 ท่า'
           : `ใบหน้าไม่ตรงกับข้อมูลที่ลงทะเบียน`
     })
 

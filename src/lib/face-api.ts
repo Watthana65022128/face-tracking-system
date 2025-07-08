@@ -323,3 +323,15 @@ export function isPoseReady(
   
   return currentPose === targetPose;
 }
+
+// ฟังก์ชันสำหรับการยืนยันตัวตนที่ใช้เฉพาะ 3 ท่า
+export function isPoseReadyForLogin(
+  currentPose: 'front' | 'left' | 'right' | 'unknown',
+  targetPose: 'front' | 'left' | 'right',
+  confidence: number
+): boolean {
+  // ความมั่นใจต้องมากกว่า 70%
+  if (confidence < 0.7) return false;
+  
+  return currentPose === targetPose;
+}

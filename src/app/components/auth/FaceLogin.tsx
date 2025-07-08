@@ -2,7 +2,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { Button } from '@/app/components/ui/Button'
 import { Card } from '@/app/components/ui/Card'
-import { loadFaceApiModels, detectFacePose, isPoseReady, detectFaceAndGetDescriptor } from '@/lib/face-api'
+import { loadFaceApiModels, detectFacePose, isPoseReadyForLogin, detectFaceAndGetDescriptor } from '@/lib/face-api'
 
 interface FaceLoginProps {
   isOpen: boolean
@@ -11,7 +11,7 @@ interface FaceLoginProps {
   onCancel: () => void
 }
 
-type PoseType = 'front' | 'left' | 'right' | 'blink';
+type PoseType = 'front' | 'left' | 'right';
 
 interface PoseData {
   type: PoseType;
@@ -45,15 +45,14 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
   const [isBlinking, setIsBlinking] = useState(false)
   const [autoVerifying, setAutoVerifying] = useState(false)
   
-  // สถานะหมดเวลา (3 วินาที)
-  const [poseTimeRemaining, setPoseTimeRemaining] = useState(3)
+  // สถานะหมดเวลา (10 วินาที)
+  const [poseTimeRemaining, setPoseTimeRemaining] = useState(10)
   const [isTimeoutWarning, setIsTimeoutWarning] = useState(false)
   
   const poses: PoseData[] = [
     { type: 'front', title: 'หน้าตรง', instruction: 'มองตรงเข้ากล้อง', icon: '🧑' },
     { type: 'left', title: 'หันซ้าย', instruction: 'หันหน้าไปทางซ้าย 30 องศา', icon: '👈' },
-    { type: 'right', title: 'หันขวา', instruction: 'หันหน้าไปทางขวา 30 องศา', icon: '👉' },
-    { type: 'blink', title: 'กระพริบตา', instruction: 'กระพริบตา 2-3 ครั้ง', icon: '👁️' }
+    { type: 'right', title: 'หันขวา', instruction: 'หันหน้าไปทางขวา 30 องศา', icon: '👉' }
   ]
   
   const currentPose = poses[currentPoseIndex]
@@ -91,7 +90,7 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
   useEffect(() => {
     if (!autoVerifying && !isVerifyingPose && !isAllPosesVerified) {
       const targetPose = currentPose.type
-      const isReady = isPoseReady(currentDetectedPose, targetPose, poseConfidence, isBlinking)
+      const isReady = isPoseReadyForLogin(currentDetectedPose, targetPose, poseConfidence)
       
       if (isReady) {
         setPoseStableCount(prev => prev + 1)
@@ -106,7 +105,7 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
     }
   }, [currentDetectedPose, poseConfidence, isBlinking, poseStableCount, autoVerifying, isVerifyingPose, isAllPosesVerified])
   
-  // ตั้งเวลาสำหรับแต่ละท่า (3 นาที)
+  // ตั้งเวลาสำหรับแต่ละท่า (10 วินาที)
   useEffect(() => {
     if (!isAllPosesVerified && !isVerifyingPose && isStreaming && !isModelLoading) {
       startPoseTimeout()
@@ -305,14 +304,14 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
       clearTimeout(poseTimeoutRef.current)
     }
     
-    // รีเซ็ตเวลาเป็น 3 วินาที
-    setPoseTimeRemaining(3)
+    // รีเซ็ตเวลาเป็น 10 วินาที
+    setPoseTimeRemaining(10)
     setIsTimeoutWarning(false)
     
-    // ตั้งตัวจับเวลา 3 วินาที
+    // ตั้งตัวจับเวลา 10 วินาที
     poseTimeoutRef.current = setTimeout(() => {
       handlePoseTimeout()
-    }, 3000) // 3 วินาที = 3,000 มิลลิวินาที
+    }, 10000) // 10 วินาที = 10,000 มิลลิวินาที
   }
   
   const handlePoseTimeout = () => {
@@ -430,7 +429,7 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
     if (poseTimeoutRef.current) {
       clearTimeout(poseTimeoutRef.current)
     }
-    setPoseTimeRemaining(3)
+    setPoseTimeRemaining(10)
     setIsTimeoutWarning(false)
     
     // เริ่มตัวจับเวลาใหม่
@@ -481,7 +480,7 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
             {isStreaming && !isModelLoading && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className={`border-4 rounded-full w-48 h-60 transition-colors duration-300 ${
-                  isPoseReady(currentDetectedPose, currentPose.type, poseConfidence, isBlinking)
+                  isPoseReadyForLogin(currentDetectedPose, currentPose.type, poseConfidence)
                     ? 'border-green-400 animate-pulse'
                     : 'border-purple-400'
                 }`} />
@@ -564,7 +563,7 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
             <div className="text-center">
               <div className="text-green-600 text-4xl mb-2">✓</div>
               <p className="text-green-600 font-semibold">
-                {loading ? 'กำลังยืนยันตัวตน...' : 'ยืนยันท่าครบทั้ง 4 ท่าแล้ว'}
+                {loading ? 'กำลังยืนยันตัวตน...' : 'ยืนยันท่าครบทั้ง 3 ท่าแล้ว'}
               </p>
             </div>
           ) : (
