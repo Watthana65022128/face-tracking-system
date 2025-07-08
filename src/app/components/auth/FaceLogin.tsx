@@ -31,12 +31,11 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
   const [error, setError] = useState('')
   const [isModelLoading, setIsModelLoading] = useState(true)
   
-  // สถานะการยืนยัน 4 ท่า
-  const [currentPoseIndex, setCurrentPoseIndex] = useState(0)
-  const [verifiedPoses, setVerifiedPoses] = useState<{ [key in PoseType]?: boolean }>({})
+  // สถานะการยืนยันท่าเดียว
+  const [selectedPose, setSelectedPose] = useState<PoseType | null>(null)
   const [isVerifyingPose, setIsVerifyingPose] = useState(false)
   const [poseProgress, setPoseProgress] = useState(0)
-  const [isAllPosesVerified, setIsAllPosesVerified] = useState(false)
+  const [isPoseVerified, setIsPoseVerified] = useState(false)
   
   // สถานะการตรวจจับแบบเรียลไทม์
   const [currentDetectedPose, setCurrentDetectedPose] = useState<'front' | 'left' | 'right' | 'unknown'>('unknown')
@@ -49,19 +48,26 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
   const [poseTimeRemaining, setPoseTimeRemaining] = useState(10)
   const [isTimeoutWarning, setIsTimeoutWarning] = useState(false)
   
-  const poses: PoseData[] = [
+  const availablePoses: PoseData[] = [
     { type: 'front', title: 'หน้าตรง', instruction: 'มองตรงเข้ากล้อง', icon: '🧑' },
     { type: 'left', title: 'หันซ้าย', instruction: 'หันหน้าไปทางซ้าย 30 องศา', icon: '👈' },
     { type: 'right', title: 'หันขวา', instruction: 'หันหน้าไปทางขวา 30 องศา', icon: '👉' }
   ]
   
-  const currentPose = poses[currentPoseIndex]
+  const currentPose = availablePoses.find(p => p.type === selectedPose)
 
   useEffect(() => {
     if (isOpen) {
+      // สุ่มเลือกท่าเมื่อเปิด modal
+      const randomIndex = Math.floor(Math.random() * availablePoses.length)
+      setSelectedPose(availablePoses[randomIndex].type)
       initializeFaceApi()
     } else {
       stopCamera()
+      // รีเซ็ตสถานะเมื่อปิด modal
+      setSelectedPose(null)
+      setIsPoseVerified(false)
+      setPoseProgress(0)
     }
     
     return () => {
@@ -77,20 +83,19 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
 
   // เริ่มการตรวจจับท่าอย่างต่อเนื่องเมื่อสตรีมมิ่ง
   useEffect(() => {
-    if (isStreaming && !isModelLoading && !isAllPosesVerified) {
+    if (isStreaming && !isModelLoading && !isPoseVerified && selectedPose) {
       startContinuousDetection()
     } else {
       stopContinuousDetection()
     }
     
     return () => stopContinuousDetection()
-  }, [isStreaming, isModelLoading, isAllPosesVerified])
+  }, [isStreaming, isModelLoading, isPoseVerified, selectedPose])
   
   // ยืนยันอัตโนมัติเมื่อท่าคงที่
   useEffect(() => {
-    if (!autoVerifying && !isVerifyingPose && !isAllPosesVerified) {
-      const targetPose = currentPose.type
-      const isReady = isPoseReadyForLogin(currentDetectedPose, targetPose, poseConfidence)
+    if (!autoVerifying && !isVerifyingPose && !isPoseVerified && selectedPose) {
+      const isReady = isPoseReadyForLogin(currentDetectedPose, selectedPose, poseConfidence)
       
       if (isReady) {
         setPoseStableCount(prev => prev + 1)
@@ -103,11 +108,11 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
         setPoseStableCount(0)
       }
     }
-  }, [currentDetectedPose, poseConfidence, isBlinking, poseStableCount, autoVerifying, isVerifyingPose, isAllPosesVerified])
+  }, [currentDetectedPose, poseConfidence, poseStableCount, autoVerifying, isVerifyingPose, isPoseVerified, selectedPose])
   
-  // ตั้งเวลาสำหรับแต่ละท่า (10 วินาที)
+  // ตั้งเวลาสำหรับท่าเดียว (10 วินาที)
   useEffect(() => {
-    if (!isAllPosesVerified && !isVerifyingPose && isStreaming && !isModelLoading) {
+    if (!isPoseVerified && !isVerifyingPose && isStreaming && !isModelLoading && selectedPose) {
       startPoseTimeout()
     }
     
@@ -116,11 +121,11 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
         clearTimeout(poseTimeoutRef.current)
       }
     }
-  }, [currentPoseIndex, isAllPosesVerified, isVerifyingPose, isStreaming, isModelLoading])
+  }, [isPoseVerified, isVerifyingPose, isStreaming, isModelLoading, selectedPose])
   
   // อัพเดตเวลาที่เหลือทุกวินาที
   useEffect(() => {
-    if (poseTimeRemaining > 0 && !isAllPosesVerified && !isVerifyingPose && isStreaming && !isModelLoading) {
+    if (poseTimeRemaining > 0 && !isPoseVerified && !isVerifyingPose && isStreaming && !isModelLoading && selectedPose) {
       const interval = setInterval(() => {
         setPoseTimeRemaining(prev => {
           if (prev <= 1 && prev > 0) {
@@ -132,14 +137,14 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
       
       return () => clearInterval(interval)
     }
-  }, [poseTimeRemaining, isAllPosesVerified, isVerifyingPose, isStreaming, isModelLoading])
+  }, [poseTimeRemaining, isPoseVerified, isVerifyingPose, isStreaming, isModelLoading, selectedPose])
   
   // ตรวจสอบหมดเวลา
   useEffect(() => {
-    if (poseTimeRemaining <= 0 && !isAllPosesVerified && !isVerifyingPose) {
+    if (poseTimeRemaining <= 0 && !isPoseVerified && !isVerifyingPose) {
       handlePoseTimeout()
     }
-  }, [poseTimeRemaining, isAllPosesVerified, isVerifyingPose])
+  }, [poseTimeRemaining, isPoseVerified, isVerifyingPose])
 
   const initializeFaceApi = async () => {
     try {
@@ -246,9 +251,8 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
       // สร้างเสียงเชิงบวกด้วย Web Audio API
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
       
-      // โนตดนตรี C5, D5, E5, F5
-      const frequencies = [523.25, 587.33, 659.25, 698.46]
-      const frequency = frequencies[currentPoseIndex] || 523.25
+      // เสียงสำหรับการยืนยันท่าสำเร็จ (ใช้โทนเดียว)
+      const frequency = 659.25 // E5 - เสียงสำหรับความสำเร็จ
       
       const oscillator = audioContext.createOscillator()
       const gainNode = audioContext.createGain()
@@ -315,8 +319,8 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
   }
   
   const handlePoseTimeout = () => {
-    setError(`หมดเวลาสำหรับท่า${currentPose.title} กรุณาเริ่มต้นใหม่`)
-    // รีเซ็ตกลับไปท่าแรก
+    setError(`หมดเวลาสำหรับท่า${currentPose?.title} กรุณาเริ่มต้นใหม่`)
+    // สุ่มเลือกท่าใหม่
     handleRestart()
   }
   
@@ -325,7 +329,7 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
   }
 
   const handleAutoVerify = async () => {
-    if (!videoRef.current || isVerifyingPose || autoVerifying) return
+    if (!videoRef.current || isVerifyingPose || autoVerifying || !selectedPose) return
 
     try {
       setError('')
@@ -338,31 +342,17 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
         clearTimeout(poseTimeoutRef.current)
       }
 
-      // ยืนยันท่าปัจจุบัน
-      const newVerifiedPoses = {
-        ...verifiedPoses,
-        [currentPose.type]: true
-      }
-      setVerifiedPoses(newVerifiedPoses)
-
       setPoseProgress(100)
       
       // เล่นเสียงเมื่อยืนยันสำเร็จ
       playSuccessSound()
       
       setTimeout(() => {
-        if (currentPoseIndex < poses.length - 1) {
-          setCurrentPoseIndex(prev => prev + 1)
-          setPoseProgress(0)
-          // เริ่มตัวจับเวลาใหม่สำหรับท่าถัดไป
-          startPoseTimeout()
-        } else {
-          setIsAllPosesVerified(true)
-          // เล่นเสียงเมื่อเสร็จสิ้นทั้งหมด
-          playCompletionSound()
-          // ยืนยันตัวตนกับเซิร์ฟเวอร์
-          handleFinalVerification(newVerifiedPoses)
-        }
+        setIsPoseVerified(true)
+        // เล่นเสียงเมื่อเสร็จสิ้น
+        playCompletionSound()
+        // ยืนยันตัวตนกับเซิร์ฟเวอร์
+        handleFinalVerification()
         setIsVerifyingPose(false)
         setAutoVerifying(false)
       }, 1500)
@@ -375,8 +365,8 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
     }
   }
 
-  const handleFinalVerification = async (verifiedPoses: any) => {
-    if (!videoRef.current) return
+  const handleFinalVerification = async () => {
+    if (!videoRef.current || !selectedPose) return
 
     setLoading(true)
     setError('')
@@ -392,7 +382,8 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
         body: JSON.stringify({
           userId,
           faceData: faceDescriptor,
-          verifiedPoses // ส่งข้อมูลท่าที่ยืนยันแล้ว
+          verifiedPoses: { [selectedPose]: true }, // ส่งท่าเดียวที่ยืนยันแล้ว
+          singlePoseVerification: true // บอก API ว่าเป็นการยืนยันท่าเดียว
         })
       })
 
@@ -415,10 +406,12 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
   }
 
   const handleRestart = () => {
-    setCurrentPoseIndex(0)
-    setVerifiedPoses({})
+    // สุ่มเลือกท่าใหม่
+    const randomIndex = Math.floor(Math.random() * availablePoses.length)
+    setSelectedPose(availablePoses[randomIndex].type)
+    
     setPoseProgress(0)
-    setIsAllPosesVerified(false)
+    setIsPoseVerified(false)
     setIsVerifyingPose(false)
     setAutoVerifying(false)
     setPoseStableCount(0)
@@ -451,7 +444,7 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
           </div>
           <h2 className="text-2xl font-bold text-gray-800">ยืนยันตัวตนด้วยใบหน้า</h2>
           <p className="text-lg text-gray-600 font-semibold mt-2">
-            {isAllPosesVerified ? 'ยืนยันสำเร็จ' : `${currentPose.title} (${currentPoseIndex + 1}/${poses.length})`}
+            {isPoseVerified ? 'ยืนยันสำเร็จ' : currentPose ? `${currentPose.title}` : 'กำลังเตรียมท่า...'}
           </p>
         </div>
 
@@ -480,7 +473,7 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
             {isStreaming && !isModelLoading && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className={`border-4 rounded-full w-48 h-60 transition-colors duration-300 ${
-                  isPoseReadyForLogin(currentDetectedPose, currentPose.type, poseConfidence)
+                  currentPose && isPoseReadyForLogin(currentDetectedPose, currentPose.type, poseConfidence)
                     ? 'border-green-400 animate-pulse'
                     : 'border-purple-400'
                 }`} />
@@ -498,8 +491,8 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
           </div>
         </div>
 
-        {/* คำแนะนำท่าปัจจุบัน */}
-        {!isAllPosesVerified && (
+        {/* คำแนะนำท่าที่สุ่มเลือก */}
+        {!isPoseVerified && currentPose && (
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
@@ -537,39 +530,25 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
           </div>
         )}
 
-        {/* แสดงท่าที่ยืนยันแล้ว */}
-        <div className="mb-6">
-          <div className="grid grid-cols-4 gap-2">
-            {poses.map((pose, index) => (
-              <div key={pose.type} className={`p-3 rounded-lg text-center transition-all ${
-                verifiedPoses[pose.type] 
-                  ? 'bg-green-100 border-2 border-green-300' 
-                  : index === currentPoseIndex 
-                    ? 'bg-purple-100 border-2 border-purple-300'
-                    : 'bg-gray-100 border-2 border-gray-200'
-              }`}>
-                <div className="text-xl mb-1">{pose.icon}</div>
-                <div className="text-xs font-semibold">{pose.title}</div>
-                {verifiedPoses[pose.type] && (
-                  <div className="text-green-600 text-lg">✓</div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
+        
         <div className="space-y-3">
-          {isAllPosesVerified ? (
+          {isPoseVerified ? (
             <div className="text-center">
               <div className="text-green-600 text-4xl mb-2">✓</div>
               <p className="text-green-600 font-semibold">
-                {loading ? 'กำลังยืนยันตัวตน...' : 'ยืนยันท่าครบทั้ง 3 ท่าแล้ว'}
+                {loading ? 'กำลังยืนยันตัวตน...' : 'ยืนยันท่าสำเร็จแล้ว'}
               </p>
             </div>
-          ) : (
+          ) : selectedPose ? (
             <div className="text-center space-y-2">
               <p className="text-gray-600">
                 ระบบจะยืนยันอัตโนมัติเมื่อท่าถูกต้อง
+              </p>
+            </div>
+          ) : (
+            <div className="text-center">
+              <p className="text-gray-600">
+                กำลังเตรียมท่ายืนยันตัวตน...
               </p>
             </div>
           )}
