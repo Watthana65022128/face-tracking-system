@@ -118,7 +118,7 @@ export default function FaceRegisterPage() {
                   <div className="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5">2</div>
                   <div>
                     <p className="font-medium text-gray-800">เตรียมตัว</p>
-                    <p className="text-sm text-gray-600">ถอดแว่นตา หมวก หรือสิ่งปิดบังใบหน้าออก</p>
+                    <p className="text-sm text-gray-600">ถอดแว่นตา ถอดหมวก ถอดสิ่งปิดบังใบหน้า</p>
                   </div>
                 </div>
 
