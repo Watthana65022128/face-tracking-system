@@ -183,10 +183,20 @@ export function validateName(name: string): { isValid: boolean; error?: string }
     return { isValid: false, error: 'กรุณากรอกชื่อ' }
   }
   
+  const trimmedName = name.trim()
+  
   // ตรวจสอบว่าชื่อประกอบด้วยตัวอักษรไทยและอังกฤษและช่องว่างเท่านั้น
   const nameRegex = /^[a-zA-Zก-๙\s]+$/
-  if (!nameRegex.test(name)) {
+  if (!nameRegex.test(trimmedName)) {
     return { isValid: false, error: 'ชื่อและนามสกุลต้องเป็นตัวอักษรเท่านั้น' }
+  }
+  
+  // ตรวจสอบความสอดคล้องของภาษา - ไม่อนุญาตให้ผสมภาษาไทยและอังกฤษ
+  const hasThaiChars = /[ก-๙]/.test(trimmedName)
+  const hasEnglishChars = /[a-zA-Z]/.test(trimmedName)
+  
+  if (hasThaiChars && hasEnglishChars) {
+    return { isValid: false, error: 'ไม่อนุญาตให้ผสมภาษาไทยและอังกฤษในชื่อเดียวกัน' }
   }
   
   return { isValid: true }
