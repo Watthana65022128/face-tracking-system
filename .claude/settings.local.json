@@ -16,7 +16,8 @@
       "Bash(rg:*)",
       "Bash(grep:*)",
       "Bash(node:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [
       "Bash(git reset --hard:*)",

@@ -200,29 +200,6 @@ export default function TrackingPage() {
                 )}
               </div>
             </Card>
-
-            {/* การ์ดข้อมูล */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">ข้อมูลส่วนตัว</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">ชื่อ:</span>
-                    <span className="font-medium">{user.firstName} {user.lastName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">อีเมล:</span>
-                    <span className="font-medium">{user.email}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">สถานะ:</span>
-                    <span className={`font-medium ${isTracking ? 'text-green-600' : 'text-gray-600'}`}>
-                      {isTracking ? 'กำลังติดตาม' : 'พร้อมใช้งาน'}
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            </div>
           </div>
         </div>
       </div>
