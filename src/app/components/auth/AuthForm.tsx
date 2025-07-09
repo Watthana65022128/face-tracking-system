@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
-import { Button } from "@/app/components/ui/Button";
-import { Input } from "@/app/components/ui/Input";
-import { PasswordInput } from "@/app/components/ui/PasswordInput";
 import { Card } from "@/app/components/ui/Card";
-import { Select } from "@/app/components/ui/Select";
 import { validatePassword, validateName, validateEmail, validateStudentId, validateTitle, validatePhoneNumber } from "@/lib/utils/validation";
+import { LoginForm } from "./form/LoginForm";
+import { RegisterForm } from "./form/RegisterForm";
+import { FormHeader } from "./form/FormHeader";
+import { SubmitButton } from "./form/SubmitButton";
+import { FormToggle } from "./form/FormToggle";
 
 interface AuthFormProps {
   type: "login" | "register";
@@ -179,254 +180,31 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
 
   return (
     <Card className="p-8 w-full max-w-md mx-auto">
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-          <svg
-            className="w-8 h-8 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-            />
-          </svg>
-        </div>
-        <h2 className="text-2xl font-bold text-gray-800">
-          {type === "login" ? "เข้าสู่ระบบ" : "ลงทะเบียน"}
-        </h2>
-        <p className="text-gray-600 mt-2">
-          {type === "login"
-            ? "ยินดีต้อนรับ"
-            : "สร้างบัญชีใหม่เพื่อเริ่มต้นใช้งาน"}
-        </p>
-      </div>
+      <FormHeader type={type} />
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {type === "register" && (
-          <>
-            <Select
-              label="คำนำหน้าชื่อ"
-              value={formData.title}
-              onChange={handleChange("title")}
-              placeholder="กรุณาเลือก"
-              required
-              error={errors.title}
-              options={[
-                { value: "นาย", label: "นาย" },
-                { value: "นาง", label: "นาง" },
-                { value: "นางสาว", label: "นางสาว" },
-                { value: "เด็กชาย", label: "เด็กชาย" },
-                { value: "เด็กหญิง", label: "เด็กหญิง" },
-                { value: "ดร.", label: "ดร." },
-                { value: "ศ.ดร.", label: "ศ.ดร." },
-                { value: "รศ.ดร.", label: "รศ.ดร." },
-                { value: "ผศ.ดร.", label: "ผศ.ดร." },
-                { value: "ศ.", label: "ศ." },
-                { value: "รศ.", label: "รศ." },
-                { value: "ผศ.", label: "ผศ." },
-                { value: "พระ", label: "พระ" },
-                { value: "แม่ชี", label: "แม่ชี" },
-                { value: "สามเณร", label: "สามเณร" },
-                { value: "สามเณรี", label: "สามเณรี" },
-                { value: "ครู", label: "ครู" },
-                { value: "อาจารย์", label: "อาจารย์" },
-                { value: "อ.", label: "อ." },
-                { value: "ท่าน", label: "ท่าน" },
-                { value: "คุณ", label: "คุณ" },
-                { value: "คุณหญิง", label: "คุณหญิง" },
-                { value: "หลวงปู่", label: "หลวงปู่" },
-                { value: "หลวงตา", label: "หลวงตา" },
-                { value: "หลวงพ่อ", label: "หลวงพ่อ" },
-                { value: "พระครู", label: "พระครู" },
-                { value: "พระมหา", label: "พระมหา" },
-                { value: "พระอาจารย์", label: "พระอาจารย์" },
-                { value: "นายก", label: "นายก" },
-                { value: "รัฐมนตรี", label: "รัฐมนตรี" },
-                { value: "ผู้ว่าราชการ", label: "ผู้ว่าราชการ" },
-                { value: "ผู้ว่าฯ", label: "ผู้ว่าฯ" },
-                { value: "นายอำเภอ", label: "นายอำเภอ" },
-                { value: "กำนัน", label: "กำนัน" },
-                { value: "ผู้ใหญ่บ้าน", label: "ผู้ใหญ่บ้าน" },
-                { value: "หม่อม", label: "หม่อม" },
-                { value: "หม่อมหลวง", label: "หม่อมหลวง" },
-                { value: "หม่อมราชวงศ์", label: "หม่อมราชวงศ์" },
-                { value: "หม่อมเจ้า", label: "หม่อมเจ้า" },
-                { value: "พระองค์เจ้า", label: "พระองค์เจ้า" },
-                { value: "เจ้าชาย", label: "เจ้าชาย" },
-                { value: "เจ้าหญิง", label: "เจ้าหญิง" },
-                { value: "ฯพณฯ", label: "ฯพณฯ" },
-                { value: "ดาบตำรวจ", label: "ดาบตำรวจ" },
-                { value: "พลตำรวจ", label: "พลตำรวจ" },
-                { value: "พันตำรวจ", label: "พันตำรวจ" },
-                { value: "ร้อยตำรวจ", label: "ร้อยตำรวจ" },
-                { value: "สิบตำรวจ", label: "สิบตำรวจ" },
-                { value: "จ่าสิบตำรวจ", label: "จ่าสิบตำรวจ" },
-                { value: "จ่าตำรวจ", label: "จ่าตำรวจ" },
-                { value: "พลฯ", label: "พลฯ" },
-                { value: "พ.อ.", label: "พ.อ." },
-                { value: "พ.ต.", label: "พ.ต." },
-                { value: "พ.ท.", label: "พ.ท." },
-                { value: "ร.อ.", label: "ร.อ." },
-                { value: "ร.ต.", label: "ร.ต." },
-                { value: "ร.ท.", label: "ร.ท." },
-                { value: "จ.ส.อ.", label: "จ.ส.อ." },
-                { value: "จ.ส.ต.", label: "จ.ส.ต." },
-                { value: "จ.ส.ท.", label: "จ.ส.ท." },
-                { value: "ส.อ.", label: "ส.อ." },
-                { value: "ส.ต.", label: "ส.ต." },
-                { value: "ส.ท.", label: "ส.ท." },
-                { value: "นาวาเอก", label: "นาวาเอก" },
-                { value: "นาวาตรี", label: "นาวาตรี" },
-                { value: "นาวาโท", label: "นาวาโท" },
-                { value: "เรือเอก", label: "เรือเอก" },
-                { value: "เรือตรี", label: "เรือตรี" },
-                { value: "เรือโท", label: "เรือโท" },
-                { value: "พันจ่าเอก", label: "พันจ่าเอก" },
-                { value: "พันจ่าตรี", label: "พันจ่าตรี" },
-                { value: "พันจ่าโท", label: "พันจ่าโท" },
-                { value: "จ่าเอก", label: "จ่าเอก" },
-                { value: "จ่าตรี", label: "จ่าตรี" },
-                { value: "จ่าโท", label: "จ่าโท" },
-                { value: "นายทหาร", label: "นายทหาร" },
-                { value: "ว่าที่ ร.ต.", label: "ว่าที่ ร.ต." },
-                { value: "ว่าที่ ร.อ.", label: "ว่าที่ ร.อ." },
-                { value: "ว่าที่เรือตรี", label: "ว่าที่เรือตรี" },
-                { value: "ว่าที่เรือเอก", label: "ว่าที่เรือเอก" },
-                { value: "หนูน้อย", label: "หนูน้อย" },
-                { value: "น้อง", label: "น้อง" },
-                { value: "พี่", label: "พี่" },
-                { value: "น้า", label: "น้า" },
-                { value: "ป้า", label: "ป้า" },
-                { value: "ลุง", label: "ลุง" },
-                { value: "อา", label: "อา" },
-                { value: "ยาย", label: "ยาย" },
-                { value: "ตา", label: "ตา" },
-                { value: "ยายทวด", label: "ยายทวด" },
-                { value: "ตาทวด", label: "ตาทวด" },
-                { value: "คุณแม่", label: "คุณแม่" },
-                { value: "คุณพ่อ", label: "คุณพ่อ" },
-                { value: "แม่", label: "แม่" },
-                { value: "พ่อ", label: "พ่อ" },
-                { value: "บิดา", label: "บิดา" },
-                { value: "มารดา", label: "มารดา" },
-                { value: "ผู้ปกครอง", label: "ผู้ปกครอง" }
-              ]}
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                label="ชื่อ"
-                value={formData.firstName}
-                onChange={handleChange("firstName")}
-                required
-                error={errors.firstName}
-              />
-              <Input
-                label="นามสกุล"
-                value={formData.lastName}
-                onChange={handleChange("lastName")}
-                required
-                error={errors.lastName}
-              />
-            </div>
-            <Input
-              label="รหัสผู้เรียน"
-              value={formData.studentId}
-              onChange={handleChange("studentId")}
-              onBlur={handleBlur("studentId")}
-              placeholder="650xxxx"
-              error={errors.studentId || duplicateErrors.studentId}
-            />
-            <Input
-              label="เบอร์โทรศัพท์"
-              value={formData.phoneNumber}
-              onChange={handleChange("phoneNumber")}
-              onBlur={handleBlur("phoneNumber")}
-              error={errors.phoneNumber || duplicateErrors.phoneNumber}
-            />
-          </>
-        )}
-
-        <Input
-          label="อีเมล"
-          type="email"
-          value={formData.email}
-          onChange={handleChange("email")}
-          onBlur={handleBlur("email")}
-          required
-          error={errors.email || (type === "register" ? duplicateErrors.email : "")}
-        />
-
-        <PasswordInput
-          label="รหัสผ่าน"
-          value={formData.password}
-          onChange={handleChange("password")}
-          placeholder="••••••••"
-          required
-          showStrength={type === "register"}
-          showToggle={true}
-          error={errors.password}
-        />
-
-        {type === "register" && (
-          <PasswordInput
-            label="ยืนยันรหัสผ่าน"
-            value={formData.confirmPassword}
-            onChange={handleChange("confirmPassword")}
-            placeholder="••••••••"
-            required
-            showStrength={false}
-            showToggle={false} // ไม่แสดงปุ่มสลับการแสดงช่องยืนยันรหัสผ่าน
-            error={errors.confirmPassword}
+        {type === "register" ? (
+          <RegisterForm
+            formData={formData}
+            errors={errors}
+            duplicateErrors={duplicateErrors}
+            onChange={handleChange}
+            onBlur={handleBlur}
+          />
+        ) : (
+          <LoginForm
+            email={formData.email}
+            password={formData.password}
+            errors={errors}
+            onChange={handleChange}
+            onBlur={handleBlur}
           />
         )}
 
-        <Button type="submit" disabled={loading} className="w-full">
-          {loading ? (
-            <div className="flex items-center justify-center">
-              <svg
-                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              กำลังดำเนินการ...
-            </div>
-          ) : type === "login" ? (
-            "เข้าสู่ระบบ"
-          ) : (
-            "ลงทะเบียน"
-          )}
-        </Button>
+        <SubmitButton type={type} loading={loading} />
       </form>
 
-      <div className="mt-6 text-center">
-        <p className="text-gray-600">
-          {type === "login" ? "ยังไม่มีบัญชี?" : "มีบัญชีแล้ว?"}
-          <a
-            href={type === "login" ? "/register" : "/login"}
-            className="ml-2 text-purple-600 hover:text-purple-700 font-medium"
-          >
-            {type === "login" ? "ลงทะเบียน" : "เข้าสู่ระบบ"}
-          </a>
-        </p>
-      </div>
+      <FormToggle type={type} />
     </Card>
   );
 }
