@@ -22,6 +22,7 @@ This is a Next.js 15 tracking system with face recognition authentication and be
 - **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: Custom JWT-based auth with face recognition using face-api.js (fully implemented)
 - **Storage**: Supabase for additional services
+- **Real-time Tracking**: MediaPipe for behavioral analysis + Supabase Realtime for live data streaming
 - **Frontend**: React 19 with TypeScript and Tailwind CSS 4.1
 - **API**: Next.js App Router API routes
 - **Security**: bcryptjs for password hashing, JWT for tokens
@@ -51,7 +52,7 @@ This is a Next.js 15 tracking system with face recognition authentication and be
 **🔄 In Progress:**
 - Behavioral tracking implementation (eye movement, mouth movement, face orientation detection)
 - Session analytics and statistics
-- Real-time tracking data collection
+- Real-time tracking data collection using MediaPipe + Supabase Realtime
 
 ## Core Data Models
 
@@ -65,8 +66,9 @@ The system tracks user behavior through four main entities:
 ## Key Dependencies
 
 - `@prisma/client` (6.10.1) - Database ORM
-- `@supabase/supabase-js` (2.50.2) - Additional storage services
+- `@supabase/supabase-js` (2.50.2) - Real-time data streaming and storage services
 - `face-api.js` (0.22.2) - Face recognition and detection
+- `@mediapipe/tasks-vision` - Advanced facial analysis and behavioral tracking
 - `bcryptjs` (3.0.2) - Password hashing
 - `jsonwebtoken` (9.0.2) - JWT token management
 - `react-hot-toast` (2.5.2) - Toast notifications
@@ -75,9 +77,12 @@ The system tracks user behavior through four main entities:
 ## Key Directories
 
 - `src/app/api/auth/` - Authentication endpoints (login, register, face-register, face-verify, check-duplicate)
+- `src/app/api/tracking/` - Real-time behavioral tracking endpoints (sessions, logs, statistics)
 - `src/lib/` - Shared utilities (Prisma client, Supabase client, validation, face-api with pose detection)
+- `src/lib/mediapipe/` - MediaPipe integration for advanced facial analysis
 - `src/app/components/auth/` - Authentication UI components (AuthForm, FaceCapture, FaceLogin)
 - `src/app/components/auth/face-capture/` - Modular face capture sub-components
+- `src/app/components/tracking/` - Real-time behavioral tracking components
 - `src/app/components/ui/` - Enhanced UI components with validation support
 - `prisma/` - Database schema and migrations
 
@@ -193,7 +198,40 @@ Use `@/*` alias for imports from `src/` directory (configured in tsconfig.json).
 
 ## Recent Updates (Current Session)
 
-### Advanced Security Enhancements (Latest Update)
+### Session Progress Summary
+
+#### ✅ **Face Login System Redesign (Completed)**
+- **Random Single-Pose Authentication**: Modified face login to randomly select 1 pose from 3 poses (front, left, right)
+- **Removed Blink Detection**: Simplified login process by removing blink requirement from verification
+- **Extended Verification Time**: Increased pose verification timeout from 3 seconds to 10 seconds per pose
+- **UI Overhaul**: Complete interface redesign to show only the randomly selected pose
+- **API Updates**: Modified face-verify endpoint to support single-pose verification mode
+- **Enhanced UX**: Users now complete authentication with just one random pose instead of 4 sequential poses
+
+#### 🔧 **Technical Implementation Updates**
+- **New Function**: `isPoseReadyForLogin()` specifically for single-pose verification
+- **FaceLogin.tsx**: Complete rewrite with random pose selection logic and simplified state management
+- **face-verify API**: Added `singlePoseVerification` mode with appropriate validation logic
+- **Error Handling**: Improved timeout and error management for single-pose flow
+- **Audio Feedback**: Streamlined sound system for single-pose completion
+
+#### 📋 **Next Phase: Real-time Behavioral Tracking**
+- **Technology Stack**: MediaPipe for advanced facial analysis + Supabase Realtime for live data streaming
+- **Target Features**:
+  - Eye movement detection and gaze tracking
+  - Mouth movement analysis (talking, eating, drinking detection)
+  - Head pose estimation (pitch, yaw, roll angles)
+  - Face detection loss monitoring
+  - Real-time anomaly detection and alerts
+- **Implementation Plan**: 
+  1. Install and integrate MediaPipe tasks-vision package
+  2. Create MediaPipe face mesh and gesture recognition components
+  3. Implement Supabase Realtime channels for live tracking data transmission
+  4. Develop behavioral tracking APIs (/api/tracking/sessions, /api/tracking/logs)
+  5. Build real-time analytics dashboard with live charts and statistics
+  6. Add alert system for suspicious behaviors
+
+### Advanced Security Enhancements (Previous Update)
 
 #### 1. Enhanced Face Login with 4-Pose Verification System
 - **MAJOR UPGRADE**: Completely rebuilt `FaceLogin.tsx` component (517 lines)
