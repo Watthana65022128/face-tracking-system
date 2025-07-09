@@ -5,3 +5,15 @@
   --primary-hover: #6d28d9;
   --background: #f8fafc;
 }
+
+/* ซ่อนไอคอนโชว์รหัสผ่านเริ่มต้นของ Microsoft Edge */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+/* ซ่อนไอคอนโชว์รหัสผ่านเริ่มต้นของ WebKit browsers */
+input[type="password"]::-webkit-textfield-decoration-container,
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  display: none;
+}
