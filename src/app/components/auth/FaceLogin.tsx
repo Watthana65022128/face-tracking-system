@@ -1,8 +1,11 @@
 'use client'
 import { useRef, useEffect, useState } from 'react'
-import { Button } from '@/app/components/ui/Button'
 import { Card } from '@/app/components/ui/Card'
 import { loadFaceApiModels, detectFacePose, isPoseReadyForLogin, detectFaceAndGetDescriptor } from '@/lib/face-api'
+import { VideoDisplay } from './face-login/VideoDisplay'
+import { PoseInstructionPanel } from './face-login/PoseInstructionPanel'
+import { StatusDisplay } from './face-login/StatusDisplay'
+import { LoadingIndicator } from './face-login/LoadingIndicator'
 
 interface FaceLoginProps {
   isOpen: boolean
@@ -11,14 +14,24 @@ interface FaceLoginProps {
   onCancel: () => void
 }
 
-type PoseType = 'front' | 'left' | 'right';
+export type PoseType = 'front' | 'left' | 'right'
 
 interface PoseData {
-  type: PoseType;
-  title: string;
-  instruction: string;
-  icon: string;
+  type: PoseType
+  title: string
+  instruction: string
+  icon: string
 }
+
+const POSE_TIMEOUT_SECONDS = 10
+const POSE_STABLE_COUNT_THRESHOLD = 10
+const DETECTION_INTERVAL = 100
+
+const AVAILABLE_POSES: PoseData[] = [
+  { type: 'front', title: 'หน้าตรง', instruction: 'มองตรงเข้ากล้อง', icon: '🧑' },
+  { type: 'left', title: 'หันซ้าย', instruction: 'หันหน้าไปทางซ้าย 30 องศา', icon: '👈' },
+  { type: 'right', title: 'หันขวา', instruction: 'หันหน้าไปทางขวา 30 องศา', icon: '👉' }
+]
 
 export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -44,8 +57,8 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
   const [isBlinking, setIsBlinking] = useState(false)
   const [autoVerifying, setAutoVerifying] = useState(false)
   
-  // สถานะหมดเวลา (10 วินาที)
-  const [poseTimeRemaining, setPoseTimeRemaining] = useState(10)
+  // สถานะหมดเวลา
+  const [poseTimeRemaining, setPoseTimeRemaining] = useState(POSE_TIMEOUT_SECONDS)
   const [isTimeoutWarning, setIsTimeoutWarning] = useState(false)
   
   const availablePoses: PoseData[] = [
@@ -98,7 +111,7 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
       const isReady = isPoseReadyForLogin(currentDetectedPose, selectedPose, poseConfidence)
       
       if (isReady) {
-        setPoseStableCount(prev => prev + 1)
+        setPoseStableCount((prev: number) => prev + 1)
         
         // หากท่าคงที่เป็นเวลา 10 ครั้งติดต่อกัน (~1 วินาที) ยืนยันอัตโนมัติ
         if (poseStableCount >= 10) {
@@ -127,7 +140,7 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
   useEffect(() => {
     if (poseTimeRemaining > 0 && !isPoseVerified && !isVerifyingPose && isStreaming && !isModelLoading && selectedPose) {
       const interval = setInterval(() => {
-        setPoseTimeRemaining(prev => {
+        setPoseTimeRemaining((prev: number) => {
           if (prev <= 1 && prev > 0) {
             setIsTimeoutWarning(true)
           }
@@ -309,7 +322,7 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
     }
     
     // รีเซ็ตเวลาเป็น 10 วินาที
-    setPoseTimeRemaining(10)
+    setPoseTimeRemaining(POSE_TIMEOUT_SECONDS)
     setIsTimeoutWarning(false)
     
     // ตั้งตัวจับเวลา 10 วินาที
@@ -324,9 +337,6 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
     handleRestart()
   }
   
-  const formatTime = (seconds: number) => {
-    return `${seconds}s`
-  }
 
   const handleAutoVerify = async () => {
     if (!videoRef.current || isVerifyingPose || autoVerifying || !selectedPose) return
@@ -422,7 +432,7 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
     if (poseTimeoutRef.current) {
       clearTimeout(poseTimeoutRef.current)
     }
-    setPoseTimeRemaining(10)
+    setPoseTimeRemaining(POSE_TIMEOUT_SECONDS)
     setIsTimeoutWarning(false)
     
     // เริ่มตัวจับเวลาใหม่
@@ -434,7 +444,7 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0  flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
       <Card className="p-8 w-full max-w-lg">
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
@@ -448,110 +458,31 @@ export function FaceLogin({ isOpen, userId, onSuccess, onCancel }: FaceLoginProp
           </p>
         </div>
 
-        {isModelLoading && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <svg className="animate-spin h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <p className="text-blue-600">กำลังโหลดโมเดล AI...</p>
-            </div>
-          </div>
-        )}
+        <LoadingIndicator isModelLoading={isModelLoading} />
 
-        <div className="relative mb-6">
-          <div className="bg-gray-900 rounded-lg overflow-hidden aspect-video">
-            <video
-              ref={videoRef}
-              className="w-full h-full object-cover"
-              autoPlay
-              muted
-              playsInline
-            />
-            
-            {isStreaming && !isModelLoading && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className={`border-4 rounded-full w-48 h-60 transition-colors duration-300 ${
-                  currentPose && isPoseReadyForLogin(currentDetectedPose, currentPose.type, poseConfidence)
-                    ? 'border-green-400 animate-pulse'
-                    : 'border-purple-400'
-                }`} />
-              </div>
-            )}
+        <VideoDisplay 
+          ref={videoRef}
+          isStreaming={isStreaming}
+          isModelLoading={isModelLoading}
+          currentDetectedPose={currentDetectedPose}
+          currentPose={currentPose}
+          poseConfidence={poseConfidence}
+        />
 
-            <div className="absolute top-4 left-4">
-              <div className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm ${
-                isStreaming ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${isStreaming ? 'bg-green-500' : 'bg-red-500'}`} />
-                <span>{isStreaming ? 'กล้องเปิดอยู่' : 'กล้องปิด'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <PoseInstructionPanel 
+          isPoseVerified={isPoseVerified}
+          currentPose={currentPose}
+          poseTimeRemaining={poseTimeRemaining}
+          isTimeoutWarning={isTimeoutWarning}
+          poseProgress={poseProgress}
+        />
 
-        {/* คำแนะนำท่าที่สุ่มเลือก */}
-        {!isPoseVerified && currentPose && (
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">{currentPose.icon}</span>
-                <div>
-                  <h3 className="font-semibold text-gray-800">{currentPose.title}</h3>
-                  <p className="text-sm text-gray-600">{currentPose.instruction}</p>
-                </div>
-              </div>
-              
-              {/* แสดงเวลาที่เหลือ */}
-              <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                isTimeoutWarning 
-                  ? 'bg-red-100 text-red-800 animate-pulse' 
-                  : 'bg-blue-100 text-blue-800'
-              }`}>
-                ⏱️ {formatTime(poseTimeRemaining)}
-              </div>
-            </div>
-            
-            {/* คำเตือนเมื่อเวลาใกล้หมด */}
-            {isTimeoutWarning && (
-              <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-                ⚠️ เวลาใกล้หมด! กรุณาทำท่าให้ถูกต้อง
-              </div>
-            )}
-            
-            {/* แถบความคืบหน้า */}
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-              <div 
-                className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${poseProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        
         <div className="space-y-3">
-          {isPoseVerified ? (
-            <div className="text-center">
-              <div className="text-green-600 text-4xl mb-2">✓</div>
-              <p className="text-green-600 font-semibold">
-                {loading ? 'กำลังยืนยันตัวตน...' : 'ยืนยันท่าสำเร็จแล้ว'}
-              </p>
-            </div>
-          ) : selectedPose ? (
-            <div className="text-center space-y-2">
-              <p className="text-gray-600">
-                ระบบจะยืนยันอัตโนมัติเมื่อท่าถูกต้อง
-              </p>
-            </div>
-          ) : (
-            <div className="text-center">
-              <p className="text-gray-600">
-                กำลังเตรียมท่ายืนยันตัวตน...
-              </p>
-            </div>
-          )}
+          <StatusDisplay 
+            isPoseVerified={isPoseVerified}
+            selectedPose={selectedPose}
+            loading={loading}
+          />
         </div>
       </Card>
     </div>
