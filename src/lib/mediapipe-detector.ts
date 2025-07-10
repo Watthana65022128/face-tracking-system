@@ -9,15 +9,6 @@ export interface FaceTrackingData {
     roll: number;
     isLookingAway: boolean;
   };
-  mouth: {
-    isOpen: boolean;
-    openingRatio: number;
-    isMoving: boolean;
-  };
-  eyes: {
-    gazeDirection: 'CENTER' | 'LEFT' | 'RIGHT' | 'UP' | 'DOWN';
-    isLookingAtScreen: boolean;
-  };
   confidence: number;
   timestamp: number;
 }
@@ -70,8 +61,6 @@ export class MediaPipeDetector {
         const noFaceData: FaceTrackingData = {
           isDetected: false,
           orientation: { yaw: 0, pitch: 0, roll: 0, isLookingAway: false },
-          mouth: { isOpen: false, openingRatio: 0, isMoving: false },
-          eyes: { gazeDirection: 'CENTER', isLookingAtScreen: true },
           confidence: 0,
           timestamp
         };
@@ -94,110 +83,54 @@ export class MediaPipeDetector {
   }
 
   private analyzeLandmarks(landmarks: NormalizedLandmark[], timestamp: number): FaceTrackingData {
-    // คำนวณการหันหน้า (Face Orientation)
+    // คำนวณการหันหน้า (Face Orientation) - Phase 1 เฉพาะ orientation
     const orientation = this.calculateFaceOrientation(landmarks);
-    
-    // คำนวณการเคลื่อนไหวของปาก (Mouth Movement)
-    const mouth = this.calculateMouthMovement(landmarks);
-    
-    // คำนวณทิศทางการมอง (Eye Gaze)
-    const eyes = this.calculateEyeGaze(landmarks);
     
     return {
       isDetected: true,
       orientation,
-      mouth,
-      eyes,
       confidence: 0.95, // MediaPipe มักให้ค่า confidence สูง
       timestamp
     };
   }
 
   private calculateFaceOrientation(landmarks: NormalizedLandmark[]) {
-    // ใช้จุดสำคัญเพื่อคำนวณการหันหน้า
-    const noseTip = landmarks[1];           // จมูก
-    const chin = landmarks[18];             // คาง
-    const leftCheek = landmarks[116];       // แก้มซ้าย
-    const rightCheek = landmarks[345];      // แก้มขวา
-    const forehead = landmarks[10];         // หน้าผาก
+    // ใช้จุดสำคัญตาม MediaPipe FaceMesh landmarks
+    const noseTip = landmarks[1];           // จมูก (nose tip)
+    const chin = landmarks[18];             // คาง (chin)  
+    const leftCheek = landmarks[116];       // แก้มซ้าย (left cheek)
+    const rightCheek = landmarks[345];      // แก้มขวา (right cheek)
+    const forehead = landmarks[10];         // หน้าผาก (forehead)
 
-    // คำนวณ yaw (การหันซ้าย-ขวา)
-    const yaw = Math.atan2(rightCheek.x - leftCheek.x, rightCheek.z - leftCheek.z) * 180 / Math.PI;
+    // คำนวณ yaw (การหันซ้าย-ขวา) ใช้ความแตกต่างของแก้มซ้าย-ขวา
+    // เมื่อหันซ้าย: แก้มขวาจะอยู่ไกลจากกล้อง (x มากกว่า)
+    // เมื่อหันขวา: แก้มซ้ายจะอยู่ไกลจากกล้อง (x น้อยกว่า)
+    const cheekDistance = rightCheek.x - leftCheek.x;
+    const yaw = Math.atan2(cheekDistance, 0.1) * 180 / Math.PI;
     
-    // คำนวณ pitch (การหันบน-ล่าง)  
-    const pitch = Math.atan2(forehead.y - chin.y, forehead.z - chin.z) * 180 / Math.PI;
+    // คำนวณ pitch (การหันบน-ล่าง) ใช้ความสัมพันธ์ระหว่างจมูกกับคาง
+    // เมื่อหันขึ้น: จมูกจะอยู่สูงกว่าปกติ
+    // เมื่อหันลง: จมูกจะอยู่ต่ำกว่าปกติ
+    const noseToChinkDistance = noseTip.y - chin.y;
+    const pitch = Math.atan2(noseToChinkDistance + 0.1, 0.1) * 180 / Math.PI - 45; // ปรับ offset
     
-    // คำนวณ roll (การเอียงซ้าย-ขวา)
-    const roll = Math.atan2(leftCheek.y - rightCheek.y, leftCheek.x - rightCheek.x) * 180 / Math.PI;
+    // คำนวณ roll (การเอียงศีรษะซ้าย-ขวา)
+    const eyeSlope = Math.atan2(rightCheek.y - leftCheek.y, rightCheek.x - leftCheek.x);
+    const roll = eyeSlope * 180 / Math.PI;
 
-    // กำหนด threshold สำหรับการ "หันออกจากจอ"
-    const YAW_THRESHOLD = 30;      // องศา
-    const PITCH_THRESHOLD = 25;    // องศา
+    // กำหนด threshold สำหรับการ "หันออกจากจอ" (เข้มงวดกว่าเดิม)
+    const YAW_THRESHOLD = 25;      // องศา (ลดจาก 30)
+    const PITCH_THRESHOLD = 20;    // องศา (ลดจาก 25)
     
+    // ตรวจสอบการหันออกจากจอ
     const isLookingAway = Math.abs(yaw) > YAW_THRESHOLD || Math.abs(pitch) > PITCH_THRESHOLD;
 
+    // Debug logging (จะลบออกในภายหลัง)
+    if (Math.abs(yaw) > 15 || Math.abs(pitch) > 15) {
+      console.log(`🎯 Face Orientation - Yaw: ${yaw.toFixed(1)}°, Pitch: ${pitch.toFixed(1)}°, Roll: ${roll.toFixed(1)}°, Away: ${isLookingAway}`);
+    }
+
     return { yaw, pitch, roll, isLookingAway };
-  }
-
-  private calculateMouthMovement(landmarks: NormalizedLandmark[]) {
-    // จุดสำคัญของปาก
-    const upperLip = landmarks[13];         // ริมฝีปากบน
-    const lowerLip = landmarks[14];         // ริมฝีปากล่าง
-    const leftCorner = landmarks[61];       // มุมปากซ้าย
-    const rightCorner = landmarks[291];     // มุมปากขวา
-
-    // คำนวณระยะห่างปาก (mouth opening)
-    const mouthHeight = Math.abs(upperLip.y - lowerLip.y);
-    const mouthWidth = Math.abs(leftCorner.x - rightCorner.x);
-    
-    // อัตราส่วนการเปิดปาก
-    const openingRatio = mouthHeight / mouthWidth;
-    
-    // threshold สำหรับการเปิดปาก
-    const MOUTH_OPEN_THRESHOLD = 0.04;
-    const isOpen = openingRatio > MOUTH_OPEN_THRESHOLD;
-    
-    // ตรวจจับการเคลื่อนไหวของปาก (เปรียบเทียบกับประวัติ)
-    let isMoving = false;
-    if (this.detectionHistory.length > 3) {
-      const recentRatios = this.detectionHistory.slice(-3).map(d => d.mouth.openingRatio);
-      const ratioVariance = this.calculateVariance(recentRatios);
-      isMoving = ratioVariance > 0.001; // threshold สำหรับการเคลื่อนไหว
-    }
-
-    return { isOpen, openingRatio, isMoving };
-  }
-
-  private calculateEyeGaze(landmarks: NormalizedLandmark[]) {
-    // จุดสำคัญของตา
-    const leftEyeCenter = landmarks[33];    // ตาซ้าย
-    const rightEyeCenter = landmarks[362];  // ตาขวา
-    const noseTip = landmarks[1];           // จมูก (reference point)
-
-    // คำนวณจุดกึ่งกลางระหว่างดวงตา
-    const eyeCenterX = (leftEyeCenter.x + rightEyeCenter.x) / 2;
-    const eyeCenterY = (leftEyeCenter.y + rightEyeCenter.y) / 2;
-
-    // คำนวณทิศทางการมองเทียบกับจมูก
-    const gazeOffsetX = eyeCenterX - noseTip.x;
-    const gazeOffsetY = eyeCenterY - noseTip.y;
-
-    // กำหนด threshold สำหรับทิศทางการมอง
-    const GAZE_THRESHOLD_X = 0.02;
-    const GAZE_THRESHOLD_Y = 0.015;
-
-    let gazeDirection: 'CENTER' | 'LEFT' | 'RIGHT' | 'UP' | 'DOWN' = 'CENTER';
-    
-    if (Math.abs(gazeOffsetX) > GAZE_THRESHOLD_X) {
-      gazeDirection = gazeOffsetX > 0 ? 'RIGHT' : 'LEFT';
-    } else if (Math.abs(gazeOffsetY) > GAZE_THRESHOLD_Y) {
-      gazeDirection = gazeOffsetY > 0 ? 'DOWN' : 'UP';
-    }
-
-    // ตรวจสอบว่ากำลังมองที่จอหรือไม่
-    const isLookingAtScreen = gazeDirection === 'CENTER';
-
-    return { gazeDirection, isLookingAtScreen };
   }
 
   private calculateVariance(values: number[]): number {

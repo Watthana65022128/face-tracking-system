@@ -15,8 +15,6 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
   const [stats, setStats] = useState({
     totalDetections: 0,
     faceAwayCount: 0,
-    mouthMovementCount: 0,
-    offScreenGazeCount: 0,
     duration: 0
   })
 
@@ -99,7 +97,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
       if (trackingData) {
         setCurrentData(trackingData)
         
-        // อัปเดตสถิติ
+        // อัปเดตสถิติ (เฉพาะ face orientation)
         setStats(prev => {
           const newStats = {
             ...prev,
@@ -107,17 +105,9 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
             duration: Math.floor((timestamp - startTimeRef.current) / 1000)
           }
 
-          // นับเหตุการณ์ต่างๆ
+          // นับเหตุการณ์การหันหน้าออกจากจอ
           if (trackingData.orientation.isLookingAway) {
             newStats.faceAwayCount++
-          }
-          
-          if (trackingData.mouth.isMoving) {
-            newStats.mouthMovementCount++
-          }
-          
-          if (!trackingData.eyes.isLookingAtScreen) {
-            newStats.offScreenGazeCount++
           }
 
           return newStats
@@ -152,13 +142,11 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
       return
     }
 
-    // กำหนดสีตามสถานะ
+    // กำหนดสีตามสถานะ (เฉพาะ face orientation)
     let borderColor = '#10B981' // เขียว (ปกติ)
     
     if (data.orientation.isLookingAway) {
       borderColor = '#EF4444' // แดง (หันหน้าออกจากจอ)
-    } else if (data.mouth.isMoving || !data.eyes.isLookingAtScreen) {
-      borderColor = '#F59E0B' // เหลือง (มีการเคลื่อนไหว)
     }
 
     // วาดกรอบรอบใบหน้า
@@ -170,15 +158,15 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     
     ctx.strokeRect(x, y, frameSize, frameSize)
 
-    // แสดงข้อมูลสถานะ
+    // แสดงข้อมูลสถานะ (เฉพาะ face orientation)
     ctx.fillStyle = borderColor
     ctx.font = '16px Arial'
     
     const statusTexts = [
       `Face: ${data.isDetected ? 'ตรวจพบ' : 'ไม่พบ'}`,
       `Orientation: ${data.orientation.isLookingAway ? 'หันออกจากจอ' : 'มองตรง'}`,
-      `Mouth: ${data.mouth.isMoving ? 'เคลื่อนไหว' : 'นิ่ง'}`,
-      `Gaze: ${data.eyes.gazeDirection}`
+      `Yaw: ${data.orientation.yaw.toFixed(1)}°`,
+      `Pitch: ${data.orientation.pitch.toFixed(1)}°`
     ]
 
     statusTexts.forEach((text, index) => {
@@ -247,22 +235,17 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
+  // Auto-start tracking when component mounts
+  useEffect(() => {
+    if (!isActive) {
+      startTracking()
+    }
+  }, [isActive, startTracking]) // Run once on mount
+
   return (
     <Card className="w-full h-full">
       <div className="p-6">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">การติดตามพฤติกรรม</h2>
-            <p className="text-gray-600">{sessionName}</p>
-          </div>
-          <div className="text-right">
-            <div className="text-3xl font-mono font-bold text-purple-600">
-              {formatTime(stats.duration)}
-            </div>
-            <p className="text-sm text-gray-500">เวลาการติดตาม</p>
-          </div>
-        </div>
+        
 
         {/* Video and Canvas Container */}
         <div className="relative mb-6">
@@ -279,21 +262,12 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
             style={{ pointerEvents: 'none' }}
           />
           
-          {!isActive && (
-            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
-              <Button
-                onClick={startTracking}
-                className="px-8 py-4 text-lg"
-              >
-                🎯 เริ่มติดตาม
-              </Button>
-            </div>
-          )}
+          
         </div>
 
-        {/* Live Stats */}
+        {/* Live Stats - เฉพาะ Face Orientation */}
         {isActive && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-blue-50 p-4 rounded-lg text-center">
               <div className="text-2xl font-bold text-blue-600">{stats.totalDetections}</div>
               <div className="text-sm text-blue-500">ครั้งที่ตรวจจับ</div>
@@ -304,19 +278,16 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
               <div className="text-sm text-red-500">หันหน้าออกจากจอ</div>
             </div>
             
-            <div className="bg-yellow-50 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-yellow-600">{stats.mouthMovementCount}</div>
-              <div className="text-sm text-yellow-500">การเคลื่อนไหวปาก</div>
-            </div>
-            
-            <div className="bg-purple-50 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-purple-600">{stats.offScreenGazeCount}</div>
-              <div className="text-sm text-purple-500">มองออกจากจอ</div>
+            <div className="bg-green-50 p-4 rounded-lg text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {stats.totalDetections > 0 ? Math.round(((stats.totalDetections - stats.faceAwayCount) / stats.totalDetections) * 100) : 0}%
+              </div>
+              <div className="text-sm text-green-500">อัตราการมองตรง</div>
             </div>
           </div>
         )}
 
-        {/* Current Detection Status */}
+        {/* Current Detection Status - เฉพาะ Face Orientation */}
         {isActive && currentData && (
           <div className="bg-gray-50 p-4 rounded-lg">
             <h3 className="font-semibold mb-2">สถานะปัจจุบัน:</h3>
@@ -327,11 +298,11 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
               <div className={`p-2 rounded ${currentData.orientation.isLookingAway ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                 Head: {currentData.orientation.isLookingAway ? 'หันออก' : 'มองตรง'}
               </div>
-              <div className={`p-2 rounded ${currentData.mouth.isMoving ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-                Mouth: {currentData.mouth.isMoving ? 'เคลื่อนไหว' : 'นิ่ง'}
+              <div className="p-2 rounded bg-blue-100 text-blue-800">
+                Yaw: {currentData.orientation.yaw.toFixed(1)}°
               </div>
-              <div className={`p-2 rounded ${!currentData.eyes.isLookingAtScreen ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}`}>
-                Eyes: {currentData.eyes.gazeDirection}
+              <div className="p-2 rounded bg-blue-100 text-blue-800">
+                Pitch: {currentData.orientation.pitch.toFixed(1)}°
               </div>
             </div>
           </div>
