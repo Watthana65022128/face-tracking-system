@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/app/components/ui/Button'
 import { Card } from '@/app/components/ui/Card'
 import { LogoutConfirmation } from '@/app/components/ui/LogoutConfirmation'
+import { FaceTracker } from '@/app/components/tracking/FaceTracker'
 import { toast } from 'react-hot-toast'
 
 interface User {
@@ -150,53 +151,38 @@ export default function TrackingPage() {
         {/* เนื้อหาหลัก */}
         <div className="max-w-6xl mx-auto p-6">
           <div className="grid gap-6 fex">
-            {/* การ์ดสถานะ */}
-            <Card className="p-8 min-h-[600px] flex justify-center items-center">
-              <div className="text-center">
-                <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${
-                  isTracking 
-                    ? 'bg-green-100 text-green-600 animate-pulse' 
-                    : 'bg-gray-100 text-gray-400'
-                }`}>
-                  <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
+            {/* การ์ดติดตาม */}
+            {!isTracking ? (
+              <Card className="p-8 min-h-[600px] flex justify-center items-center">
+                <div className="text-center">
+                  <div className="w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center bg-gray-100 text-gray-400">
+                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
 
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  {isTracking ? 'กำลังติดตาม...' : 'พร้อมเริ่มติดตาม'}
-                </h2>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                    พร้อมเริ่มติดตาม
+                  </h2>
 
-                <p className="text-gray-600 mb-6">
-                  {isTracking 
-                    ? `เวลาการติดตาม: ${formatTime(trackingData.duration)}`
-                    : 'กดปุ่มเริ่มเมื่อคุณพร้อม'
-                  }
-                </p>
+                  <p className="text-gray-600 mb-6">
+                    กดปุ่มเพื่อเปิดกล้องและเริ่มระบบติดตามพฤติกรรม
+                  </p>
 
-                {!isTracking ? (
                   <Button
                     onClick={handleStartTracking}
                     className="px-12 py-4 text-lg"
                   >
-                    เริ่มติดตาม
+                    🎥 เริ่มติดตาม
                   </Button>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="text-4xl font-mono font-bold text-purple-600">
-                      {formatTime(trackingData.duration)}
-                    </div>
-                    <Button
-                      onClick={handleStopTracking}
-                      variant="secondary"
-                      className="px-8 py-3"
-                    >
-                      ⏹️ หยุดติดตาม
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </Card>
+                </div>
+              </Card>
+            ) : (
+              <FaceTracker
+                onTrackingStop={handleStopTracking}
+                sessionName={trackingData.location}
+              />
+            )}
           </div>
         </div>
       </div>
