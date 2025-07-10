@@ -137,13 +137,10 @@ export default function TrackingPage() {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-gray-800">Tracking System</h1>
-                  <p className="text-sm text-gray-600">ยินดีต้อนรับ {user.firstName} {user.lastName}</p>
+                  <p className="text-sm text-gray-600">ยินดีต้อนรับคุณ {user.firstName}</p>
                 </div>
               </div>
               <Button onClick={handleLogoutClick} variant="secondary">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
                 ออกจากระบบ
               </Button>
             </div>
@@ -151,10 +148,10 @@ export default function TrackingPage() {
         </div>
 
         {/* เนื้อหาหลัก */}
-        <div className="max-w-4xl mx-auto p-6">
-          <div className="grid gap-6">
+        <div className="max-w-6xl mx-auto p-6">
+          <div className="grid gap-6 fex">
             {/* การ์ดสถานะ */}
-            <Card className="p-8">
+            <Card className="p-8 min-h-[600px]">
               <div className="text-center">
                 <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${
                   isTracking 
@@ -182,7 +179,7 @@ export default function TrackingPage() {
                     onClick={handleStartTracking}
                     className="px-12 py-4 text-lg"
                   >
-                    🚀 เริ่มติดตาม
+                    เริ่มติดตาม
                   </Button>
                 ) : (
                   <div className="space-y-4">

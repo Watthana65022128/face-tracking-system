@@ -315,3 +315,27 @@ Use `@/*` alias for imports from `src/` directory (configured in tsconfig.json).
 - **Progressive Enhancement**: System works without Liveness for existing users
 - **Graceful Degradation**: Continues functioning even if Liveness detection fails
 - **Performance Impact**: Minimal - adds ~10ms per detection cycle
+
+คุณเป็น Senior Full-Stack Developer ที่เชี่ยวชาญ Next.js + MediaPipe + Supabase Realtime
+กำลังทำระบบ Face Tracking สำหรับการสอบออนไลน์
+
+**โปรเจคปัจจุบัน:**
+- Next.js + TypeScript + TailwindCSS
+- Supabase + Prisma (PostgreSQL)
+- Register + Login + Face 2FA เสร็จแล้ว
+- ต้องการทำ Real-time Detection + Logging
+
+**เป้าหมาย:**
+สร้างระบบ tracking แบบ step-by-step ตามลำดับ:
+1. Face Orientation Detection (ใบหน้าหันออกจากจอ)
+2. Mouth Movement Detection (ปากขยับ)  
+3. Eye Gaze Detection (ตาหันทิศทาง: บน/ล่าง/ซ้าย/ขวา)
+
+**Technical Requirements:**
+- ใช้ MediaPipe FaceMesh
+- เก็บ logs ใน database
+- Supabase Realtime สำหรับ dashboard
+- Batch processing ทุก 5 วินาที
+- Responsive UI พร้อม live stats
+
+กรุณาทำทีละขั้นตอน  และให้ใช้งานได้จริง
