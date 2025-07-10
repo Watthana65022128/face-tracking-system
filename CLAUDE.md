@@ -339,3 +339,74 @@ Use `@/*` alias for imports from `src/` directory (configured in tsconfig.json).
 - Responsive UI พร้อม live stats
 
 กรุณาทำทีละขั้นตอน  และให้ใช้งานได้จริง
+To-Do List แบบ Step-by-Step:
+Phase 1: Face Orientation Detection 🎭
+Step 1.1: Setup MediaPipe Foundation
+Task: สร้าง MediaPipe detector พื้นฐาน
+- Install @mediapipe/face_mesh
+- สร้าง lib/mediapipe-detector.ts  
+- Setup camera access ใน tracking component
+- Test face landmarks detection
+Step 1.2: Face Orientation Algorithm
+Task: คำนวณการหันหน้า
+- ใช้ landmarks จมูก (1), คาง (18), แก้มซ้าย (116), แก้มขวา (345)
+- คำนวณ yaw (ซ้าย/ขวา) และ pitch (บน/ล่าง) 
+- กำหนด threshold สำหรับ "หันออกจากจอ"
+- Test กับการหันหน้าจริง
+Step 1.3: Data Logging System
+Task: เก็บ log การหันหน้า
+- สร้าง API route: /api/tracking/log
+- เก็บข้อมูลใน tracking_logs table
+- Batch processing ทุก 5 วินาที
+- Test การบันทึกข้อมูล
+Step 1.4: Real-time Dashboard
+Task: แสดงสถิติการหันหน้าแบบ real-time
+- Setup Supabase realtime subscription
+- สร้าง dashboard component
+- แสดงจำนวนครั้งที่หันออกจากจอ
+- Live update เมื่อมีข้อมูลใหม่
+Phase 2: Mouth Movement Detection 👄
+Step 2.1: Mouth Landmarks Analysis
+Task: วิเคราะห์การเคลื่อนไหวปาก
+- ใช้ mouth landmarks (upper lip: 13, lower lip: 14, corners: 61, 291)
+- คำนวณ mouth opening ratio
+- กำหนด threshold สำหรับ "ปากขยับ"
+- Test กับการพูด/เคี้ยว/หาว
+Step 2.2: Mouth Movement Integration
+Task: รวมเข้าระบบ detection
+- เพิ่ม mouth detection ใน detector class
+- อัปเดต logging system สำหรับ MOUTH_MOVEMENT
+- เพิ่มใน dashboard แสดงสถิติปาก
+- Test accuracy และ false positives
+Phase 3: Eye Gaze Detection 👁️
+Step 3.1: Eye Landmarks Setup
+Task: เตรียมระบบตรวจจับตา
+- ระบุ eye landmarks (ตาซ้าย: 33, ตาขวา: 362, etc.)
+- คำนวณ iris position (ประมาณ)
+- กำหนดพื้นที่ "กลางจอ" vs "นอกจอ"
+Step 3.2: Gaze Direction Algorithm
+Task: คำนวณทิศทางการมอง
+- หาตำแหน่ง gaze point (x, y)
+- แบ่งเป็น 5 ทิศทาง: CENTER/LEFT/RIGHT/UP/DOWN
+- กำหนด threshold สำหรับแต่ละทิศทาง
+- Test กับการมองไปทิศทางต่างๆ
+Step 3.3: Complete System Integration
+Task: รวมระบบทั้งหมด
+- รวม 3 detection types ใน component เดียว
+- อัปเดต dashboard แสดงสถิติครบ
+- เพิ่ม session management
+- Performance optimization
+- Final testing กับ user จริง
+Phase 4: Polish & Optimization ✨
+Step 4.1: UI/UX Enhancement
+Task: ปรับปรุง interface
+- สร้าง tracking session page ที่สวยงาม
+- เพิ่ม live video preview พร้อม overlays
+- Real-time stats แสดงแบบ animated
+- Responsive design สำหรับทุกหน้าจอ
+Step 4.2: Performance & Error Handling
+Task: เพิ่มประสิทธิภาพและจัดการ error
+- Optimize detection frequency
+- Error handling สำหรับ camera/detection failures
+- Loading states และ user feedback
+- Browser compatibility testing
