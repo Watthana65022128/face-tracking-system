@@ -151,7 +151,7 @@ export default function TrackingPage() {
         <div className="max-w-6xl mx-auto p-6">
           <div className="grid gap-6 fex">
             {/* การ์ดสถานะ */}
-            <Card className="p-8 min-h-[600px]">
+            <Card className="p-8 min-h-[600px] flex justify-center items-center">
               <div className="text-center">
                 <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${
                   isTracking 
