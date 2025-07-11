@@ -11,6 +11,7 @@ export interface FaceTrackingData {
   };
   confidence: number;
   timestamp: number;
+  landmarks?: NormalizedLandmark[];
 }
 
 export class MediaPipeDetector {
@@ -90,7 +91,8 @@ export class MediaPipeDetector {
       isDetected: true,
       orientation,
       confidence: 0.95, // MediaPipe มักให้ค่า confidence สูง
-      timestamp
+      timestamp,
+      landmarks // ส่ง landmarks ทั้ง 468 จุดไปให้ component
     };
   }
 

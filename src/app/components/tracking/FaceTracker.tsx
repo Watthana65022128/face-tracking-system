@@ -142,36 +142,202 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
       return
     }
 
-    // กำหนดสีตามสถานะ (เฉพาะ face orientation)
-    let borderColor = '#10B981' // เขียว (ปกติ)
-    
-    if (data.orientation.isLookingAway) {
-      borderColor = '#EF4444' // แดง (หันหน้าออกจากจอ)
+    // วาด Sci-Fi Face Mesh ด้วย landmarks ทั้ง 468 จุด
+    if (data.landmarks && data.landmarks.length > 0) {
+      drawSciFiFaceMesh(ctx, data.landmarks, canvas.width, canvas.height, data.orientation.isLookingAway)
     }
 
-    // วาดกรอบรอบใบหน้า
-    ctx.strokeStyle = borderColor
-    ctx.lineWidth = 4
-    const frameSize = Math.min(canvas.width, canvas.height) * 0.6
-    const x = (canvas.width - frameSize) / 2
-    const y = (canvas.height - frameSize) / 2
-    
-    ctx.strokeRect(x, y, frameSize, frameSize)
-
-    // แสดงข้อมูลสถานะ (เฉพาะ face orientation)
-    ctx.fillStyle = borderColor
-    ctx.font = '16px Arial'
+    // แสดงข้อมูลสถานะ
+    const statusColor = data.orientation.isLookingAway ? '#FF4444' : '#00FF88'
+    ctx.fillStyle = statusColor
+    ctx.font = '16px "Courier New", monospace'
+    ctx.shadowColor = statusColor
+    ctx.shadowBlur = 10
     
     const statusTexts = [
-      `Face: ${data.isDetected ? 'ตรวจพบ' : 'ไม่พบ'}`,
-      `Orientation: ${data.orientation.isLookingAway ? 'หันออกจากจอ' : 'มองตรง'}`,
-      `Yaw: ${data.orientation.yaw.toFixed(1)}°`,
-      `Pitch: ${data.orientation.pitch.toFixed(1)}°`
+      `FACE_DETECTION: ${data.isDetected ? 'ACTIVE' : 'INACTIVE'}`,
+      `ORIENTATION: ${data.orientation.isLookingAway ? 'LOOKING_AWAY' : 'FOCUSED'}`,
+      `YAW: ${data.orientation.yaw.toFixed(1)}°`,
+      `PITCH: ${data.orientation.pitch.toFixed(1)}°`,
+      `LANDMARKS: ${data.landmarks?.length || 0} POINTS`
     ]
 
     statusTexts.forEach((text, index) => {
-      ctx.fillText(text, 20, canvas.height - 100 + (index * 25))
+      ctx.fillText(text, 20, canvas.height - 120 + (index * 22))
     })
+    
+    ctx.shadowBlur = 0
+  }, [])
+
+  // วาด Sci-Fi Face Mesh แบบเส้นโครงสีเขียว
+  const drawSciFiFaceMesh = useCallback((
+    ctx: CanvasRenderingContext2D, 
+    landmarks: any[], 
+    canvasWidth: number, 
+    canvasHeight: number,
+    isLookingAway: boolean
+  ) => {
+    const primaryColor = isLookingAway ? '#FF4444' : '#00FF88'
+    const secondaryColor = isLookingAway ? '#FF8888' : '#44FFAA'
+    const glowColor = isLookingAway ? 'rgba(255, 68, 68, 0.3)' : 'rgba(0, 255, 136, 0.3)'
+
+    // วาดจุด landmarks ทั้ง 468 จุด
+    landmarks.forEach((landmark, index) => {
+      const x = landmark.x * canvasWidth
+      const y = landmark.y * canvasHeight
+
+      // จุดสำคัญ (ตา, จมูก, ปาก) ให้ใหญ่กว่า
+      const isKeyPoint = isKeyLandmark(index)
+      const pointSize = isKeyPoint ? 3 : 1.5
+
+      // วาดจุดด้วยเอฟเฟคเรืองแสง
+      ctx.save()
+      ctx.globalCompositeOperation = 'screen'
+      
+      // เรืองแสงรอบจุด
+      ctx.beginPath()
+      ctx.arc(x, y, pointSize + 2, 0, 2 * Math.PI)
+      ctx.fillStyle = glowColor
+      ctx.fill()
+      
+      // จุดหลัก
+      ctx.beginPath()
+      ctx.arc(x, y, pointSize, 0, 2 * Math.PI)
+      ctx.fillStyle = isKeyPoint ? primaryColor : secondaryColor
+      ctx.fill()
+      
+      ctx.restore()
+    })
+
+    // วาดเส้นเชื่อมโครงหน้า (Face Contour)
+    drawFaceContours(ctx, landmarks, canvasWidth, canvasHeight, primaryColor)
+    
+    // วาดเส้นตา
+    drawEyeContours(ctx, landmarks, canvasWidth, canvasHeight, primaryColor)
+    
+    // วาดเส้นปาก  
+    drawMouthContours(ctx, landmarks, canvasWidth, canvasHeight, primaryColor)
+    
+    // วาดเส้นจมูก
+    drawNoseContours(ctx, landmarks, canvasWidth, canvasHeight, primaryColor)
+
+  }, [])
+
+  // ตรวจสอบว่าเป็น landmark สำคัญหรือไม่
+  const isKeyLandmark = useCallback((index: number): boolean => {
+    // จุดสำคัญของใบหน้า (ตา, จมูก, ปาก, โครงหน้า)
+    const keyPoints = [
+      // โครงหน้า
+      10, 151, 9, 8, 168, 6, 148, 176, 149, 150, 136, 172, 
+      // ตาซ้าย
+      33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246,
+      // ตาขวา  
+      362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398,
+      // จมูก
+      19, 20, 98, 97, 2, 326, 327, 294, 278, 344, 1, 5,
+      // ปาก
+      61, 84, 17, 314, 405, 320, 307, 375, 321, 308, 324, 318
+    ]
+    return keyPoints.includes(index)
+  }, [])
+
+  // วาดเส้นโครงหน้า
+  const drawFaceContours = useCallback((
+    ctx: CanvasRenderingContext2D,
+    landmarks: any[],
+    width: number,
+    height: number,
+    color: string
+  ) => {
+    // จุดโครงหน้า (Face Oval)
+    const faceOval = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109, 10]
+    
+    drawConnectedLines(ctx, landmarks, faceOval, width, height, color, 1)
+  }, [])
+
+  // วาดเส้นตา
+  const drawEyeContours = useCallback((
+    ctx: CanvasRenderingContext2D,
+    landmarks: any[],
+    width: number,
+    height: number,
+    color: string
+  ) => {
+    // ตาซ้าย
+    const leftEye = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246, 33]
+    drawConnectedLines(ctx, landmarks, leftEye, width, height, color, 1.5)
+    
+    // ตาขวา
+    const rightEye = [362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398, 362]
+    drawConnectedLines(ctx, landmarks, rightEye, width, height, color, 1.5)
+  }, [])
+
+  // วาดเส้นปาก
+  const drawMouthContours = useCallback((
+    ctx: CanvasRenderingContext2D,
+    landmarks: any[],
+    width: number,
+    height: number,
+    color: string
+  ) => {
+    // ขอบปากนอก
+    const outerLips = [61, 84, 17, 314, 405, 320, 307, 375, 321, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 61]
+    drawConnectedLines(ctx, landmarks, outerLips, width, height, color, 1.5)
+    
+    // ขอบปากใน
+    const innerLips = [78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 415, 310, 311, 312, 13, 82, 81, 80, 78]
+    drawConnectedLines(ctx, landmarks, innerLips, width, height, color, 1)
+  }, [])
+
+  // วาดเส้นจมูก
+  const drawNoseContours = useCallback((
+    ctx: CanvasRenderingContext2D,
+    landmarks: any[],
+    width: number,
+    height: number,
+    color: string
+  ) => {
+    // ดั่งจมูก
+    const noseBridge = [6, 168, 8, 9, 10, 151]
+    drawConnectedLines(ctx, landmarks, noseBridge, width, height, color, 1.5)
+    
+    // ปีกจมูก
+    const noseWings = [98, 97, 2, 326, 327, 294, 278, 344, 358, 279, 420, 399, 437, 355, 371, 329, 348, 36, 131, 134, 102, 48, 115, 131]
+    drawConnectedLines(ctx, landmarks, noseWings, width, height, color, 1)
+  }, [])
+
+  // วาดเส้นเชื่อมจุด
+  const drawConnectedLines = useCallback((
+    ctx: CanvasRenderingContext2D,
+    landmarks: any[],
+    indices: number[],
+    width: number,
+    height: number,
+    color: string,
+    lineWidth: number
+  ) => {
+    if (indices.length < 2) return
+
+    ctx.save()
+    ctx.strokeStyle = color
+    ctx.lineWidth = lineWidth
+    ctx.shadowColor = color
+    ctx.shadowBlur = 3
+    ctx.globalCompositeOperation = 'screen'
+
+    ctx.beginPath()
+    let startX = landmarks[indices[0]].x * width
+    let startY = landmarks[indices[0]].y * height
+    ctx.moveTo(startX, startY)
+
+    for (let i = 1; i < indices.length; i++) {
+      const x = landmarks[indices[i]].x * width
+      const y = landmarks[indices[i]].y * height
+      ctx.lineTo(x, y)
+    }
+
+    ctx.stroke()
+    ctx.restore()
   }, [])
 
   // เริ่มการติดตาม
