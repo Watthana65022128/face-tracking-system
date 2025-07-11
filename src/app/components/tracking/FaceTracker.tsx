@@ -51,12 +51,19 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
 
       // เริ่มต้น MediaPipe detector
       if (!detectorRef.current) {
+        console.log('🔧 สร้าง MediaPipe detector ใหม่...')
         detectorRef.current = new MediaPipeDetector()
+        
+        console.log('⏳ กำลังโหลด MediaPipe (อาจใช้เวลา 10-30 วินาที)...')
         const initialized = await detectorRef.current.initialize()
         
         if (!initialized) {
+          console.error('💥 MediaPipe ไม่สามารถโหลดได้')
+          alert('MediaPipe ไม่สามารถโหลดได้\nกรุณาตรวจสอบ internet connection\nหรือลอง refresh หน้าเว็บ')
           throw new Error('MediaPipe initialization failed')
         }
+        
+        console.log('🎉 MediaPipe โหลดสำเร็จแล้ว!')
       }
 
       return true
@@ -88,11 +95,27 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
 
   // การติดตามแบบ real-time
   const performDetection = useCallback(async () => {
-    if (!detectorRef.current || !videoRef.current || !isActive) return
+    console.log('🔄 performDetection ถูกเรียก...', { 
+      hasDetector: !!detectorRef.current, 
+      hasVideo: !!videoRef.current, 
+      isActive 
+    });
+
+    if (!detectorRef.current || !videoRef.current) {
+      console.warn('⚠️ ข้อมูลไม่พร้อมสำหรับ detection:', {
+        detector: !!detectorRef.current,
+        video: !!videoRef.current, 
+        active: isActive
+      });
+      return;
+    }
 
     try {
       const timestamp = performance.now()
+      console.log('🎯 เรียก detectFromVideo...', timestamp);
+      
       const trackingData = await detectorRef.current.detectFromVideo(videoRef.current, timestamp)
+      console.log('📋 ได้ tracking data:', trackingData);
       
       if (trackingData) {
         setCurrentData(trackingData)
@@ -108,18 +131,22 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
           // นับเหตุการณ์การหันหน้าออกจากจอ
           if (trackingData.orientation.isLookingAway) {
             newStats.faceAwayCount++
+            console.log('🚨 ตรวจพบการหันหน้าออกจากจอ!', newStats.faceAwayCount);
           }
 
+          console.log('📊 อัปเดตสถิติ:', newStats);
           return newStats
         })
 
         // วาดผลลัพธ์บน canvas
         drawDetectionOverlay(trackingData)
+      } else {
+        console.warn('⚠️ ไม่ได้รับ tracking data');
       }
     } catch (error) {
       console.error('❌ เกิดข้อผิดพลาดในการตรวจจับ:', error)
     }
-  }, [isActive])
+  }, [])
 
   // วาดการแสดงผลบน canvas
   const drawDetectionOverlay = useCallback((data: FaceTrackingData) => {
@@ -144,7 +171,10 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
 
     // วาด Sci-Fi Face Mesh ด้วย landmarks ทั้ง 468 จุด
     if (data.landmarks && data.landmarks.length > 0) {
+      console.log('🎨 วาด Face Mesh จำนวน landmarks:', data.landmarks.length);
       drawSciFiFaceMesh(ctx, data.landmarks, canvas.width, canvas.height, data.orientation.isLookingAway)
+    } else {
+      console.warn('⚠️ ไม่มี landmarks สำหรับวาด mesh');
     }
 
     // แสดงข้อมูลสถานะ
@@ -177,50 +207,47 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     canvasHeight: number,
     isLookingAway: boolean
   ) => {
+    console.log('🎨 เริ่มวาด Face Mesh...', { landmarks: landmarks.length, width: canvasWidth, height: canvasHeight });
+    
     const primaryColor = isLookingAway ? '#FF4444' : '#00FF88'
     const secondaryColor = isLookingAway ? '#FF8888' : '#44FFAA'
     const glowColor = isLookingAway ? 'rgba(255, 68, 68, 0.3)' : 'rgba(0, 255, 136, 0.3)'
 
-    // วาดจุด landmarks ทั้ง 468 จุด
-    landmarks.forEach((landmark, index) => {
-      const x = landmark.x * canvasWidth
-      const y = landmark.y * canvasHeight
+    try {
+      // วาดจุด landmarks ทั้ง 468 จุด
+      landmarks.forEach((landmark, index) => {
+        if (!landmark || typeof landmark.x !== 'number' || typeof landmark.y !== 'number') {
+          console.warn('⚠️ Invalid landmark at index', index, landmark);
+          return;
+        }
 
-      // จุดสำคัญ (ตา, จมูก, ปาก) ให้ใหญ่กว่า
-      const isKeyPoint = isKeyLandmark(index)
-      const pointSize = isKeyPoint ? 3 : 1.5
+        const x = landmark.x * canvasWidth
+        const y = landmark.y * canvasHeight
 
-      // วาดจุดด้วยเอฟเฟคเรืองแสง
-      ctx.save()
-      ctx.globalCompositeOperation = 'screen'
+        // วาดจุดเฉพาะที่สำคัญเพื่อประสิทธิภาพ
+        if (index % 3 === 0) { // วาดทุก 3 จุด
+          const pointSize = 1.5
+
+          // วาดจุดหลัก
+          ctx.save()
+          ctx.beginPath()
+          ctx.arc(x, y, pointSize, 0, 2 * Math.PI)
+          ctx.fillStyle = primaryColor
+          ctx.fill()
+          ctx.restore()
+        }
+      })
+
+      // วาดเส้นเชื่อมโครงหน้าที่สำคัญ
+      drawFaceContours(ctx, landmarks, canvasWidth, canvasHeight, primaryColor)
+      drawEyeContours(ctx, landmarks, canvasWidth, canvasHeight, primaryColor)
+      drawMouthContours(ctx, landmarks, canvasWidth, canvasHeight, primaryColor)
+      drawNoseContours(ctx, landmarks, canvasWidth, canvasHeight, primaryColor)
       
-      // เรืองแสงรอบจุด
-      ctx.beginPath()
-      ctx.arc(x, y, pointSize + 2, 0, 2 * Math.PI)
-      ctx.fillStyle = glowColor
-      ctx.fill()
-      
-      // จุดหลัก
-      ctx.beginPath()
-      ctx.arc(x, y, pointSize, 0, 2 * Math.PI)
-      ctx.fillStyle = isKeyPoint ? primaryColor : secondaryColor
-      ctx.fill()
-      
-      ctx.restore()
-    })
-
-    // วาดเส้นเชื่อมโครงหน้า (Face Contour)
-    drawFaceContours(ctx, landmarks, canvasWidth, canvasHeight, primaryColor)
-    
-    // วาดเส้นตา
-    drawEyeContours(ctx, landmarks, canvasWidth, canvasHeight, primaryColor)
-    
-    // วาดเส้นปาก  
-    drawMouthContours(ctx, landmarks, canvasWidth, canvasHeight, primaryColor)
-    
-    // วาดเส้นจมูก
-    drawNoseContours(ctx, landmarks, canvasWidth, canvasHeight, primaryColor)
-
+      console.log('✅ วาด Face Mesh เสร็จสิ้น');
+    } catch (error) {
+      console.error('❌ เกิดข้อผิดพลาดในการวาด Face Mesh:', error);
+    }
   }, [])
 
   // ตรวจสอบว่าเป็น landmark สำคัญหรือไม่
@@ -318,40 +345,69 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
   ) => {
     if (indices.length < 2) return
 
-    ctx.save()
-    ctx.strokeStyle = color
-    ctx.lineWidth = lineWidth
-    ctx.shadowColor = color
-    ctx.shadowBlur = 3
-    ctx.globalCompositeOperation = 'screen'
+    try {
+      ctx.save()
+      ctx.strokeStyle = color
+      ctx.lineWidth = lineWidth
+      ctx.shadowColor = color
+      ctx.shadowBlur = 3
+      ctx.globalCompositeOperation = 'screen'
 
-    ctx.beginPath()
-    let startX = landmarks[indices[0]].x * width
-    let startY = landmarks[indices[0]].y * height
-    ctx.moveTo(startX, startY)
+      ctx.beginPath()
+      
+      // ตรวจสอบ landmark แรก
+      if (!landmarks[indices[0]]) {
+        console.warn('⚠️ Missing landmark at index:', indices[0]);
+        ctx.restore();
+        return;
+      }
+      
+      let startX = landmarks[indices[0]].x * width
+      let startY = landmarks[indices[0]].y * height
+      ctx.moveTo(startX, startY)
 
-    for (let i = 1; i < indices.length; i++) {
-      const x = landmarks[indices[i]].x * width
-      const y = landmarks[indices[i]].y * height
-      ctx.lineTo(x, y)
+      for (let i = 1; i < indices.length; i++) {
+        if (!landmarks[indices[i]]) {
+          console.warn('⚠️ Missing landmark at index:', indices[i]);
+          continue;
+        }
+        
+        const x = landmarks[indices[i]].x * width
+        const y = landmarks[indices[i]].y * height
+        ctx.lineTo(x, y)
+      }
+
+      ctx.stroke()
+      ctx.restore()
+    } catch (error) {
+      console.error('❌ Error drawing connected lines:', error);
+      ctx.restore();
     }
-
-    ctx.stroke()
-    ctx.restore()
   }, [])
 
   // เริ่มการติดตาม
   const startTracking = useCallback(async () => {
+    console.log('🚀 เริ่มต้น startTracking...');
+    
     const initialized = await initializeCamera()
-    if (!initialized) return
+    if (!initialized) {
+      console.error('❌ ไม่สามารถเริ่มต้นกล้องได้');
+      return;
+    }
 
+    console.log('✅ กล้องเริ่มต้นสำเร็จ');
     setIsActive(true)
     startTimeRef.current = performance.now()
     
     // เริ่ม detection loop
-    intervalRef.current = setInterval(performDetection, 100) // ทุก 100ms
+    console.log('⏰ ตั้ง interval สำหรับ detection...');
+    intervalRef.current = setInterval(() => {
+      console.log('⏱️ Interval tick - เรียก performDetection');
+      performDetection();
+    }, 100) // ทุก 100ms
     
-    console.log('🎯 เริ่มการติดตาม')
+    console.log('🎯 เริ่มการติดตาม - interval ID:', intervalRef.current)
+    
   }, [initializeCamera, performDetection])
 
   // หยุดการติดตาม
@@ -403,10 +459,13 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
 
   // Auto-start tracking when component mounts
   useEffect(() => {
+    console.log('🔄 useEffect auto-start ทำงาน...', { isActive });
+    
     if (!isActive) {
+      console.log('⚡ เริ่มการ tracking อัตโนมัติ...');
       startTracking()
     }
-  }, [isActive, startTracking]) // Run once on mount
+  }, []) // Run once on mount only (remove dependencies to prevent loops)
 
   return (
     <Card className="w-full h-full">
