@@ -178,7 +178,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     }
 
     // แสดงข้อมูลสถานะ
-    const statusColor = data.orientation.isLookingAway ? '#FF4444' : '#00FF88'
+    const statusColor = data.orientation.isLookingAway ? '#FF4444' : '#00FF88'  // แดงเมื่อหันออก, เขียวเมื่อมองตรง
     ctx.fillStyle = statusColor
     ctx.font = '16px "Courier New", monospace'
     ctx.shadowColor = statusColor
@@ -209,9 +209,9 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
   ) => {
     console.log('🎨 เริ่มวาด Face Mesh...', { landmarks: landmarks.length, width: canvasWidth, height: canvasHeight });
     
-    const primaryColor = isLookingAway ? '#FF4444' : '#00FF88'
-    const secondaryColor = isLookingAway ? '#FF8888' : '#44FFAA'
-    const glowColor = isLookingAway ? 'rgba(255, 68, 68, 0.3)' : 'rgba(0, 255, 136, 0.3)'
+    const primaryColor = isLookingAway ? '#FF4444' : '#00FF88'  // แดงเมื่อหันออก, เขียวเมื่อมองตรง
+    const secondaryColor = isLookingAway ? '#FF8888' : '#44FFAA'  // แดงอ่อน/เขียวอ่อน
+    const glowColor = isLookingAway ? 'rgba(255, 68, 68, 0.3)' : 'rgba(0, 255, 136, 0.3)'  // เรืองแสงแดง/เขียว
 
     try {
       // วาดจุด landmarks ทั้ง 468 จุด
