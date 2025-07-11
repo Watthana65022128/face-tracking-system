@@ -161,7 +161,7 @@ export class MediaPipeDetector {
 
   destroy(): void {
     if (this.faceLandmarker) {
-      this.faceLandmarker.close();
+      
       this.faceLandmarker = null;
     }
     this.isInitialized = false;

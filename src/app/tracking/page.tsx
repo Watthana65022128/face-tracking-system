@@ -30,12 +30,34 @@ export default function TrackingPage() {
     const userData = localStorage.getItem('user')
 
     if (!token || !userData) {
-      alert('กรุณาเข้าสู่ระบบก่อน')
+      toast.error('กรุณาเข้าสู่ระบบก่อน')
       window.location.href = '/login'
       return
     }
 
-    setUser(JSON.parse(userData))
+    // ตรวจสอบความถูกต้องของ token
+    if (token !== 'verified') {
+      toast.error('Token ไม่ถูกต้อง กรุณาเข้าสู่ระบบใหม่')
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+      return
+    }
+
+    try {
+      const parsedUser = JSON.parse(userData)
+      // ตรวจสอบว่าข้อมูลผู้ใช้ครบถ้วน
+      if (!parsedUser.id || !parsedUser.firstName) {
+        throw new Error('ข้อมูลผู้ใช้ไม่ครบถ้วน')
+      }
+      setUser(parsedUser)
+    } catch (error) {
+      console.error('Invalid user data:', error)
+      toast.error('ข้อมูลผู้ใช้ไม่ถูกต้อง กรุณาเข้าสู่ระบบใหม่')
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+    }
   }, [])
 
   useEffect(() => {

@@ -51,7 +51,7 @@ export function StatusIndicators({
             currentDetectedPose === currentPoseType || (currentPoseType === 'blink' && isBlinking)
               ? 'bg-green-100 text-green-800'
               : 'bg-yellow-100 text-yellow-800'
-          }`}>
+          }`}> 
             <div className={`w-2 h-2 rounded-full ${
               currentDetectedPose === currentPoseType || (currentPoseType === 'blink' && isBlinking)
                 ? 'bg-green-500'
