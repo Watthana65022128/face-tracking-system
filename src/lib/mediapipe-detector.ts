@@ -3,6 +3,11 @@ import { FaceLandmarker, FilesetResolver, NormalizedLandmark } from '@mediapipe/
 
 export interface FaceTrackingData {
   isDetected: boolean;
+  orientation: {
+    yaw: number;
+    pitch: number;
+    isLookingAway: boolean;
+  };
   confidence: number;
   timestamp: number;
   landmarks?: NormalizedLandmark[];
@@ -98,6 +103,7 @@ export class MediaPipeDetector {
         console.log('❌ ไม่พบใบหน้าใน MediaPipe results');
         const noFaceData: FaceTrackingData = {
           isDetected: false,
+          orientation: { yaw: 0, pitch: 0, isLookingAway: false },
           confidence: 0,
           timestamp
         };
@@ -108,13 +114,8 @@ export class MediaPipeDetector {
 
       const landmarks = results.faceLandmarks[0];
       console.log('✅ พบใบหน้า! landmarks:', landmarks.length, 'จุด');
-      
-      const trackingData: FaceTrackingData = {
-        isDetected: true,
-        confidence: 0.95,
-        timestamp,
-        landmarks
-      };
+      const trackingData = this.analyzeLandmarks(landmarks, timestamp);
+      console.log('📈 tracking data:', trackingData);
       
       this.lastDetection = trackingData;
       return trackingData;
@@ -127,6 +128,76 @@ export class MediaPipeDetector {
 
   getLastDetection(): FaceTrackingData | null {
     return this.lastDetection;
+  }
+
+  private analyzeLandmarks(landmarks: NormalizedLandmark[], timestamp: number): FaceTrackingData {
+    // คำนวณการหันหน้า (Face Orientation)
+    const orientation = this.calculateFaceOrientation(landmarks);
+    
+    return {
+      isDetected: true,
+      orientation,
+      confidence: 0.95, // MediaPipe มักให้ค่า confidence สูง
+      timestamp,
+      landmarks // ส่ง landmarks ทั้ง 468 จุดไปให้ component
+    };
+  }
+
+  private calculateFaceOrientation(landmarks: NormalizedLandmark[]) {
+    // ใช้จุดสำคัญตาม MediaPipe FaceMesh 468 landmarks
+    const noseTip = landmarks[1];        // จมูกปลาย
+    const leftEyeInner = landmarks[133]; // มุมในตาซ้าย
+    const rightEyeInner = landmarks[362]; // มุมในตาขวา
+    const leftEyeOuter = landmarks[33];   // มุมนอกตาซ้าย  
+    const rightEyeOuter = landmarks[263]; // มุมนอกตาขวา
+    const chin = landmarks[18];           // คาง
+    const forehead = landmarks[10];       // หน้าผาก
+
+    // Debug: แสดง coordinates ของจุดสำคัญ
+    console.log('🎯 Landmark Coordinates:', {
+      noseTip: { x: noseTip.x, y: noseTip.y },
+      leftEyeInner: { x: leftEyeInner.x, y: leftEyeInner.y },
+      rightEyeInner: { x: rightEyeInner.x, y: rightEyeInner.y },
+      leftEyeOuter: { x: leftEyeOuter.x, y: leftEyeOuter.y },
+      rightEyeOuter: { x: rightEyeOuter.x, y: rightEyeOuter.y },
+      chin: { x: chin.x, y: chin.y },
+      forehead: { x: forehead.x, y: forehead.y }
+    });
+
+    // คำนวณ yaw (หันซ้าย-ขวา) ด้วยอัตราส่วนความยาวตา - **แก้ไขทิศทาง**
+    const leftEyeWidth = Math.abs(leftEyeOuter.x - leftEyeInner.x);
+    const rightEyeWidth = Math.abs(rightEyeOuter.x - rightEyeInner.x);
+    
+    // **แก้ไขทิศทาง**: เมื่อหันซ้าย ratio < 1, เมื่อหันขวา ratio > 1
+    // MediaPipe พิกัด: ตาซ้าย = มุมมองจากกล้อง (ด้านขวาของหน้าจอ), ตาขวา = ด้านซ้ายของหน้าจอ
+    const eyeRatio = leftEyeWidth / rightEyeWidth; // คืนกลับเป็นเดิม
+    let yaw = (1 - eyeRatio) * 100; // สลับเครื่องหมาย: (1 - ratio) แทน (ratio - 1)
+    yaw = Math.max(-60, Math.min(60, yaw)); // จำกัด range
+    
+    // คำนวณ pitch (หันบน-ล่าง) ด้วยอัตราส่วนจมูก-คาง
+    const noseToForeheadDistance = Math.abs(noseTip.y - forehead.y);
+    const noseToChinDistance = Math.abs(chin.y - noseTip.y);
+    
+    const verticalRatio = noseToForeheadDistance / noseToChinDistance;
+    let pitch = (verticalRatio - 0.6) * 200; // ปรับ scale
+    pitch = Math.max(-45, Math.min(45, pitch)); // จำกัด range
+
+    // **ปรับ threshold ใหม่** - ลดเป็น 8-10° สำหรับความแม่นยำสูง
+    const YAW_THRESHOLD = 10;      // องศา (ลดจาก 15 เป็น 10)
+    const PITCH_THRESHOLD = 8;     // องศา (ลดจาก 15 เป็น 8)
+    
+    // ตรวจสอบการหันออกจากจอ
+    const isLookingAway = Math.abs(yaw) > YAW_THRESHOLD || Math.abs(pitch) > PITCH_THRESHOLD;
+
+    // Debug logging ที่ละเอียดยิ่งขึ้น
+    console.log(`🎯 Face Orientation Debug:`);
+    console.log(`   Eye Widths - Left: ${leftEyeWidth.toFixed(4)}, Right: ${rightEyeWidth.toFixed(4)}`);
+    console.log(`   Eye Ratio: ${eyeRatio.toFixed(4)}`);
+    console.log(`   Nose-Forehead: ${noseToForeheadDistance.toFixed(4)}, Nose-Chin: ${noseToChinDistance.toFixed(4)}`);
+    console.log(`   Vertical Ratio: ${verticalRatio.toFixed(4)}`);
+    console.log(`   Final - Yaw: ${yaw.toFixed(1)}°, Pitch: ${pitch.toFixed(1)}°, Away: ${isLookingAway}`);
+
+    return { yaw, pitch, isLookingAway };
   }
 
   destroy(): void {
