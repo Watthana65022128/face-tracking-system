@@ -174,13 +174,17 @@ export class MediaPipeDetector {
     let yaw = (1 - eyeRatio) * 100; // สลับเครื่องหมาย: (1 - ratio) แทน (ratio - 1)
     yaw = Math.max(-60, Math.min(60, yaw)); // จำกัด range
     
-    // คำนวณ pitch (หันบน-ล่าง) ด้วยอัตราส่วนจมูก-คาง
+    // คำนวณ pitch (หันบน-ล่าง) ด้วยตำแหน่งจมูกในแกน Y **แก้ไขให้ถูกต้อง**
     const noseToForeheadDistance = Math.abs(noseTip.y - forehead.y);
     const noseToChinDistance = Math.abs(chin.y - noseTip.y);
+    const totalFaceHeight = Math.abs(chin.y - forehead.y);
     
-    const verticalRatio = noseToForeheadDistance / noseToChinDistance;
-    let pitch = (verticalRatio - 0.6) * 200; // ปรับ scale
-    pitch = Math.max(-45, Math.min(45, pitch)); // จำกัด range
+    // ใช้ตำแหน่งสัมพัทธ์ของจมูกในใบหน้า (0-1 scale)
+    const noseRelativePosition = (noseTip.y - forehead.y) / totalFaceHeight;
+    
+    // แปลงเป็นองศา: 0.5 = กึ่งกลาง, <0.5 = หันขึ้น (pitch ลบ), >0.5 = หันลง (pitch บวก)
+    let pitch = (noseRelativePosition - 0.5) * 60; // scale เป็น ±30 องศา
+    pitch = Math.max(-30, Math.min(30, pitch)); // จำกัด range
 
     // **ปรับ threshold ใหม่** - ลดเป็น 8-10° สำหรับความแม่นยำสูง
     const YAW_THRESHOLD = 10;      // องศา (ลดจาก 15 เป็น 10)
@@ -193,8 +197,8 @@ export class MediaPipeDetector {
     console.log(`🎯 Face Orientation Debug:`);
     console.log(`   Eye Widths - Left: ${leftEyeWidth.toFixed(4)}, Right: ${rightEyeWidth.toFixed(4)}`);
     console.log(`   Eye Ratio: ${eyeRatio.toFixed(4)}`);
-    console.log(`   Nose-Forehead: ${noseToForeheadDistance.toFixed(4)}, Nose-Chin: ${noseToChinDistance.toFixed(4)}`);
-    console.log(`   Vertical Ratio: ${verticalRatio.toFixed(4)}`);
+    console.log(`   Face Heights - Nose-Forehead: ${noseToForeheadDistance.toFixed(4)}, Nose-Chin: ${noseToChinDistance.toFixed(4)}, Total: ${totalFaceHeight.toFixed(4)}`);
+    console.log(`   Nose Relative Position: ${noseRelativePosition.toFixed(4)} (0.5=center, <0.5=up, >0.5=down)`);
     console.log(`   Final - Yaw: ${yaw.toFixed(1)}°, Pitch: ${pitch.toFixed(1)}°, Away: ${isLookingAway}`);
 
     return { yaw, pitch, isLookingAway };
