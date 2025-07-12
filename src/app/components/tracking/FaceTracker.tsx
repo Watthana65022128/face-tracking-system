@@ -12,18 +12,12 @@ interface FaceTrackerProps {
 export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ' }: FaceTrackerProps) {
   const [isActive, setIsActive] = useState(false)
   const [currentData, setCurrentData] = useState<FaceTrackingData | null>(null)
-  const [stats, setStats] = useState({
-    totalDetections: 0,
-    faceAwayCount: 0,
-    duration: 0
-  })
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const detectorRef = useRef<MediaPipeDetector | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
-  const startTimeRef = useRef<number>(0)
 
   // เริ่มต้นกล้องและ MediaPipe
   const initializeCamera = useCallback(async () => {
@@ -120,24 +114,6 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
       if (trackingData) {
         setCurrentData(trackingData)
         
-        // อัปเดตสถิติ (เฉพาะ face orientation)
-        setStats(prev => {
-          const newStats = {
-            ...prev,
-            totalDetections: prev.totalDetections + 1,
-            duration: Math.floor((timestamp - startTimeRef.current) / 1000)
-          }
-
-          // นับเหตุการณ์การหันหน้าออกจากจอ
-          if (trackingData.orientation.isLookingAway) {
-            newStats.faceAwayCount++
-            console.log('🚨 ตรวจพบการหันหน้าออกจากจอ!', newStats.faceAwayCount);
-          }
-
-          console.log('📊 อัปเดตสถิติ:', newStats);
-          return newStats
-        })
-
         // วาดผลลัพธ์บน canvas
         drawDetectionOverlay(trackingData)
       } else {
@@ -169,16 +145,16 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
       return
     }
 
-    // วาด Sci-Fi Face Mesh ด้วย landmarks ทั้ง 468 จุด
+    // วาด Sci-Fi Face Mesh ด้วย landmarks ทั้ง 468 จุด (สีเขียวเท่านั้น)
     if (data.landmarks && data.landmarks.length > 0) {
       console.log('🎨 วาด Face Mesh จำนวน landmarks:', data.landmarks.length);
-      drawSciFiFaceMesh(ctx, data.landmarks, canvas.width, canvas.height, data.orientation.isLookingAway)
+      drawSciFiFaceMesh(ctx, data.landmarks, canvas.width, canvas.height)
     } else {
       console.warn('⚠️ ไม่มี landmarks สำหรับวาด mesh');
     }
 
-    // แสดงข้อมูลสถานะ
-    const statusColor = data.orientation.isLookingAway ? '#FF4444' : '#00FF88'  // แดงเมื่อหันออก, เขียวเมื่อมองตรง
+    // แสดงข้อมูลสถานะ (เฉพาะ face detection)
+    const statusColor = '#00FF88'  // สีเขียวเท่านั้น
     ctx.fillStyle = statusColor
     ctx.font = '16px "Courier New", monospace'
     ctx.shadowColor = statusColor
@@ -186,14 +162,11 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     
     const statusTexts = [
       `FACE_DETECTION: ${data.isDetected ? 'ACTIVE' : 'INACTIVE'}`,
-      `ORIENTATION: ${data.orientation.isLookingAway ? 'LOOKING_AWAY' : 'FOCUSED'}`,
-      `YAW: ${data.orientation.yaw.toFixed(1)}°`,
-      `PITCH: ${data.orientation.pitch.toFixed(1)}°`,
       `LANDMARKS: ${data.landmarks?.length || 0} POINTS`
     ]
 
     statusTexts.forEach((text, index) => {
-      ctx.fillText(text, 20, canvas.height - 120 + (index * 22))
+      ctx.fillText(text, 20, canvas.height - 60 + (index * 22))
     })
     
     ctx.shadowBlur = 0
@@ -204,14 +177,13 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     ctx: CanvasRenderingContext2D, 
     landmarks: any[], 
     canvasWidth: number, 
-    canvasHeight: number,
-    isLookingAway: boolean
+    canvasHeight: number
   ) => {
     console.log('🎨 เริ่มวาด Face Mesh...', { landmarks: landmarks.length, width: canvasWidth, height: canvasHeight });
     
-    const primaryColor = isLookingAway ? '#FF4444' : '#00FF88'  // แดงเมื่อหันออก, เขียวเมื่อมองตรง
-    const secondaryColor = isLookingAway ? '#FF8888' : '#44FFAA'  // แดงอ่อน/เขียวอ่อน
-    const glowColor = isLookingAway ? 'rgba(255, 68, 68, 0.3)' : 'rgba(0, 255, 136, 0.3)'  // เรืองแสงแดง/เขียว
+    const primaryColor = '#00FF88'  // สีเขียวเท่านั้น
+    const secondaryColor = '#44FFAA'  // เขียวอ่อน
+    const glowColor = 'rgba(0, 255, 136, 0.3)'  // เรืองแสงเขียว
 
     try {
       // วาดจุด landmarks ทั้ง 468 จุด
@@ -397,7 +369,6 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
 
     console.log('✅ กล้องเริ่มต้นสำเร็จ');
     setIsActive(true)
-    startTimeRef.current = performance.now()
     
     // เริ่ม detection loop
     console.log('⏰ ตั้ง interval สำหรับ detection...');
@@ -422,8 +393,8 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     stopCamera()
     onTrackingStop()
     
-    console.log('⏹️ หยุดการติดตาม', stats)
-  }, [stopCamera, onTrackingStop, stats])
+    console.log('⏹️ หยุดการติดตาม')
+  }, [stopCamera, onTrackingStop,])
 
   // Cleanup เมื่อ component unmount
   useEffect(() => {
@@ -490,44 +461,17 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
           
         </div>
 
-        {/* Live Stats - เฉพาะ Face Orientation */}
-        {isActive && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-blue-50 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-blue-600">{stats.totalDetections}</div>
-              <div className="text-sm text-blue-500">ครั้งที่ตรวจจับ</div>
-            </div>
-            
-            <div className="bg-red-50 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-red-600">{stats.faceAwayCount}</div>
-              <div className="text-sm text-red-500">หันหน้าออกจากจอ</div>
-            </div>
-            
-            <div className="bg-green-50 p-4 rounded-lg text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {stats.totalDetections > 0 ? Math.round(((stats.totalDetections - stats.faceAwayCount) / stats.totalDetections) * 100) : 0}%
-              </div>
-              <div className="text-sm text-green-500">อัตราการมองตรง</div>
-            </div>
-          </div>
-        )}
 
-        {/* Current Detection Status - เฉพาะ Face Orientation */}
+        {/* Current Detection Status - เฉพาะ Face Detection */}
         {isActive && currentData && (
           <div className="bg-gray-50 p-4 rounded-lg">
             <h3 className="font-semibold mb-2">สถานะปัจจุบัน:</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
               <div className={`p-2 rounded ${currentData.isDetected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                Face: {currentData.isDetected ? 'ตรวจพบ' : 'ไม่พบ'}
-              </div>
-              <div className={`p-2 rounded ${currentData.orientation.isLookingAway ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                Head: {currentData.orientation.isLookingAway ? 'หันออก' : 'มองตรง'}
+                Face Detection: {currentData.isDetected ? 'ตรวจพบใบหน้า' : 'ไม่พบใบหน้า'}
               </div>
               <div className="p-2 rounded bg-blue-100 text-blue-800">
-                Yaw: {currentData.orientation.yaw.toFixed(1)}°
-              </div>
-              <div className="p-2 rounded bg-blue-100 text-blue-800">
-                Pitch: {currentData.orientation.pitch.toFixed(1)}°
+                Landmarks: {currentData.landmarks?.length || 0} จุด
               </div>
             </div>
           </div>
