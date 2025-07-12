@@ -186,9 +186,9 @@ export class MediaPipeDetector {
     let pitch = (noseRelativePosition - 0.5) * 60; // scale เป็น ±30 องศา
     pitch = Math.max(-30, Math.min(30, pitch)); // จำกัด range
 
-    // **ปรับ threshold ใหม่** - ลดเป็น 8-10° สำหรับความแม่นยำสูง
-    const YAW_THRESHOLD = 10;      // องศา (ลดจาก 15 เป็น 10)
-    const PITCH_THRESHOLD = 8;     // องศา (ลดจาก 15 เป็น 8)
+    // **ปรับ threshold ใหม่** - คืนค่าเป็น 15° เหมือนเดิม
+    const YAW_THRESHOLD = 25;      // องศา (ยาว/ซ้าย-ขวา)
+    const PITCH_THRESHOLD = 12;    // องศา (บน-ล่าง)
     
     // ตรวจสอบการหันออกจากจอ
     const isLookingAway = Math.abs(yaw) > YAW_THRESHOLD || Math.abs(pitch) > PITCH_THRESHOLD;
