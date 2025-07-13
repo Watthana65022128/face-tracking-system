@@ -523,7 +523,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     }
     
     // มองตรง
-    return { direction: 'ตรง ●', color: 'bg-green-100 text-green-800' }
+    return { direction: 'มองตรง ●', color: 'bg-green-100 text-green-800' }
   }, [])
 
   const formatTime = (seconds: number) => {
