@@ -96,11 +96,6 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     });
 
     if (!detectorRef.current || !videoRef.current) {
-      console.warn('⚠️ ข้อมูลไม่พร้อมสำหรับ detection:', {
-        detector: !!detectorRef.current,
-        video: !!videoRef.current, 
-        active: isActive
-      });
       return;
     }
 
