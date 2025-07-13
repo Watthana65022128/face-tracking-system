@@ -576,24 +576,24 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
               <div className={`p-2 rounded ${currentData.isDetected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                 Face Detection: {currentData.isDetected ? 'ตรวจพบใบหน้า' : 'ไม่พบใบหน้า'}
               </div>
-              <div className={`p-2 rounded ${currentData.orientation.isLookingAway ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                Orientation: {currentData.orientation.isLookingAway ? 'หันหน้าออก' : 'มองตรง'}
+              <div className={`p-2 rounded ${!currentData.isDetected ? 'bg-gray-100 text-gray-800' : currentData.orientation.isLookingAway ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                Orientation: {!currentData.isDetected ? 'ไม่พบใบหน้า' : currentData.orientation.isLookingAway ? 'หันหน้าออก' : '	อยู่ในเฟรมตรวจจับ'}
               </div>
             </div>
 
             {/* Orientation Details */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm mb-3">
               <div className="p-2 rounded bg-blue-100 text-blue-800">
-                Yaw: {currentData.orientation.yaw.toFixed(1)}°
+                Yaw: {!currentData.isDetected ? 'ไม่พบใบหน้า' : `${currentData.orientation.yaw.toFixed(1)}°`}
               </div>
               <div className="p-2 rounded bg-blue-100 text-blue-800">
-                Pitch: {currentData.orientation.pitch.toFixed(1)}°
+                Pitch: {!currentData.isDetected ? 'ไม่พบใบหน้า' : `${currentData.orientation.pitch.toFixed(1)}°`}
               </div>
               <div className="p-2 rounded bg-gray-100 text-gray-800">
                 Landmarks: {currentData.landmarks?.length || 0} จุด
               </div>
-              <div className={`p-2 rounded ${getOrientationIndicator(currentData.orientation.yaw, currentData.orientation.pitch).color}`}>
-                ทิศทาง: {getOrientationIndicator(currentData.orientation.yaw, currentData.orientation.pitch).direction}
+              <div className={`p-2 rounded ${!currentData.isDetected ? 'bg-gray-100 text-gray-800' : getOrientationIndicator(currentData.orientation.yaw, currentData.orientation.pitch).color}`}>
+                ทิศทาง: {!currentData.isDetected ? 'ไม่พบใบหน้า' : getOrientationIndicator(currentData.orientation.yaw, currentData.orientation.pitch).direction}
               </div>
             </div>
           </div>
