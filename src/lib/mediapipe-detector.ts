@@ -91,6 +91,12 @@ export class MediaPipeDetector {
         return null;
       }
 
+      // ตรวจสอบ faceLandmarker อีกครั้งก่อนเรียกใช้
+      if (!this.faceLandmarker || typeof this.faceLandmarker.detectForVideo !== 'function') {
+        console.error('❌ faceLandmarker ไม่พร้อมใช้งาน หรือ detectForVideo method ไม่พบ');
+        return null;
+      }
+
       console.log('🔍 เรียก detectForVideo...', { timestamp, videoWidth: video.videoWidth, videoHeight: video.videoHeight });
       const results = this.faceLandmarker.detectForVideo(video, timestamp);
       console.log('📊 MediaPipe results:', { 

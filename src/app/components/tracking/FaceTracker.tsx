@@ -508,17 +508,17 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     // กำหนดทิศทางหลักตามค่าที่มากกว่า
     if (absYaw > absPitch) {
       // หันซ้าย-ขวา
-      if (yaw > 15) {
-        return { direction: 'ขวา →', color: 'bg-orange-100 text-orange-800' }
-      } else if (yaw < -15) {
-        return { direction: '← ซ้าย', color: 'bg-orange-100 text-orange-800' }
+      if (yaw > 25) {
+        return { direction: 'หันขวา →', color: 'bg-orange-100 text-orange-800' }
+      } else if (yaw < -25) {
+        return { direction: '← หันซ้าย', color: 'bg-orange-100 text-orange-800' }
       }
     } else {
       // หันบน-ล่าง
-      if (pitch > 10) {
-        return { direction: 'ล่าง ↓', color: 'bg-purple-100 text-purple-800' }
-      } else if (pitch < -10) {
-        return { direction: '↑ บน', color: 'bg-purple-100 text-purple-800' }
+      if (pitch > 12) {
+        return { direction: 'ก้มหน้า ↓', color: 'bg-purple-100 text-purple-800' }
+      } else if (pitch < -12) {
+        return { direction: '↑ เงยหน้า', color: 'bg-purple-100 text-purple-800' }
       }
     }
     
@@ -594,32 +594,6 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
               </div>
               <div className={`p-2 rounded ${getOrientationIndicator(currentData.orientation.yaw, currentData.orientation.pitch).color}`}>
                 ทิศทาง: {getOrientationIndicator(currentData.orientation.yaw, currentData.orientation.pitch).direction}
-              </div>
-            </div>
-
-            {/* Visual Direction Indicator */}
-            <div className="flex justify-center">
-              <div className="relative w-24 h-24 bg-gray-200 rounded-full border-2 border-gray-300">
-                {/* Center dot */}
-                <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-gray-400 rounded-full transform -translate-x-1/2 -translate-y-1/2"></div>
-                
-                {/* Direction indicator dot */}
-                <div 
-                  className={`absolute w-3 h-3 rounded-full transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ${
-                    currentData.orientation.isLookingAway ? 'bg-red-500' : 'bg-green-500'
-                  }`}
-                  style={{
-                    left: `${50 + (currentData.orientation.yaw * 0.8)}%`,
-                    top: `${50 + (currentData.orientation.pitch * 0.8)}%`
-                  }}
-                  title={`Yaw: ${currentData.orientation.yaw.toFixed(1)}°, Pitch: ${currentData.orientation.pitch.toFixed(1)}°`}
-                ></div>
-                
-                {/* Direction labels */}
-                <div className="absolute top-1 left-1/2 transform -translate-x-1/2 text-xs text-gray-600">บน</div>
-                <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-xs text-gray-600">ล่าง</div>
-                <div className="absolute left-1 top-1/2 transform -translate-y-1/2 text-xs text-gray-600">ซ้าย</div>
-                <div className="absolute right-1 top-1/2 transform -translate-y-1/2 text-xs text-gray-600">ขวา</div>
               </div>
             </div>
           </div>
