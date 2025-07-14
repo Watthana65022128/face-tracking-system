@@ -17,6 +17,11 @@ export class MediaPipeDetector {
   private faceLandmarker: FaceLandmarker | null = null;
   private isInitialized: boolean = false;
   private lastDetection: FaceTrackingData | null = null;
+  
+  // Auto-calibration system สำหรับ Pitch baseline
+  private calibrationSamples: number[] = [];
+  private calibrationComplete: boolean = false;
+  private calibratedNeutralPosition: number = 0.58; // default value
 
   async initialize(): Promise<boolean> {
     try {
@@ -180,17 +185,36 @@ export class MediaPipeDetector {
     let yaw = (1 - eyeRatio) * 100; // สลับเครื่องหมาย: (1 - ratio) แทน (ratio - 1)
     yaw = Math.max(-60, Math.min(60, yaw)); // จำกัด range
     
-    // คำนวณ pitch (หันบน-ล่าง) ด้วยตำแหน่งจมูกในแกน Y **แก้ไขให้ถูกต้อง**
-    const noseToForeheadDistance = Math.abs(noseTip.y - forehead.y);
-    const noseToChinDistance = Math.abs(chin.y - noseTip.y);
+    // คำนวณ pitch (หันบน-ล่าง) ด้วยวิธีที่แม่นยำขึ้น
     const totalFaceHeight = Math.abs(chin.y - forehead.y);
     
     // ใช้ตำแหน่งสัมพัทธ์ของจมูกในใบหน้า (0-1 scale)
     const noseRelativePosition = (noseTip.y - forehead.y) / totalFaceHeight;
     
-    // แปลงเป็นองศา: 0.5 = กึ่งกลาง, <0.5 = หันขึ้น (pitch ลบ), >0.5 = หันลง (pitch บวก)
-    let pitch = (noseRelativePosition - 0.5) * 60; // scale เป็น ±30 องศา
-    pitch = Math.max(-30, Math.min(30, pitch)); // จำกัด range
+    // **แก้ไขการคำนวณ Pitch**: ใช้ baseline ที่แม่นยำขึ้น + Auto-calibration
+    // Auto-calibration: เก็บ samples แรก 30 ครั้ง (3 วินาที) เป็น baseline
+    if (!this.calibrationComplete && this.calibrationSamples.length < 30) {
+      this.calibrationSamples.push(noseRelativePosition);
+      console.log(`📊 Calibrating... Sample ${this.calibrationSamples.length}/30: ${noseRelativePosition.toFixed(4)}`);
+      
+      if (this.calibrationSamples.length === 30) {
+        // คำนวณค่าเฉลี่ยเป็น neutral position ของผู้ใช้คนนี้
+        const sum = this.calibrationSamples.reduce((a, b) => a + b, 0);
+        this.calibratedNeutralPosition = sum / this.calibrationSamples.length;
+        this.calibrationComplete = true;
+        console.log(`✅ Auto-calibration complete! Personal neutral position: ${this.calibratedNeutralPosition.toFixed(4)}`);
+      }
+    }
+    
+    // ใช้ calibrated baseline หรือ default value
+    const neutralNosePosition = this.calibratedNeutralPosition;
+    
+    // คำนวณส่วนเบี่ยงเบนจาก neutral position
+    const pitchDeviation = noseRelativePosition - neutralNosePosition;
+    
+    // แปลงเป็นองศาด้วย sensitivity ที่ลดลง
+    let pitch = pitchDeviation * 80; // ลด sensitivity จาก 60 เป็น 80 (ให้ค่าน้อยลง)
+    pitch = Math.max(-25, Math.min(25, pitch)); // จำกัด range ±25°
 
     // **ปรับ threshold ใหม่** - คืนค่าเป็น 15° เหมือนเดิม
     const YAW_THRESHOLD = 25;      // องศา (ยาว/ซ้าย-ขวา)
@@ -201,10 +225,12 @@ export class MediaPipeDetector {
 
     // Debug logging ที่ละเอียดยิ่งขึ้น
     console.log(`🎯 Face Orientation Debug:`);
+    console.log(`   Calibration: ${this.calibrationComplete ? 'Complete' : `In progress (${this.calibrationSamples.length}/30)`}`);
     console.log(`   Eye Widths - Left: ${leftEyeWidth.toFixed(4)}, Right: ${rightEyeWidth.toFixed(4)}`);
     console.log(`   Eye Ratio: ${eyeRatio.toFixed(4)}`);
-    console.log(`   Face Heights - Nose-Forehead: ${noseToForeheadDistance.toFixed(4)}, Nose-Chin: ${noseToChinDistance.toFixed(4)}, Total: ${totalFaceHeight.toFixed(4)}`);
-    console.log(`   Nose Relative Position: ${noseRelativePosition.toFixed(4)} (0.5=center, <0.5=up, >0.5=down)`);
+    console.log(`   Face Height: ${totalFaceHeight.toFixed(4)}`);
+    console.log(`   Nose Position: ${noseRelativePosition.toFixed(4)} (neutral=${neutralNosePosition.toFixed(4)})`);
+    console.log(`   Pitch Deviation: ${pitchDeviation.toFixed(4)} -> ${pitch.toFixed(1)}° (should be ~0° when looking straight)`);
     console.log(`   Final - Yaw: ${yaw.toFixed(1)}°, Pitch: ${pitch.toFixed(1)}°, Away: ${isLookingAway}`);
 
     return { yaw, pitch, isLookingAway };
@@ -216,6 +242,12 @@ export class MediaPipeDetector {
     }
     this.isInitialized = false;
     this.lastDetection = null;
-    console.log('🧹 MediaPipe detector ถูกล้างแล้ว');
+    
+    // Reset calibration
+    this.calibrationSamples = [];
+    this.calibrationComplete = false;
+    this.calibratedNeutralPosition = 0.58;
+    
+    console.log('🧹 MediaPipe detector ถูกล้างแล้ว (รวมถึง calibration data)');
   }
 }
