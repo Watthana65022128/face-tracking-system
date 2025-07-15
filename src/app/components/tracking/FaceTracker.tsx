@@ -44,6 +44,16 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
       return
     }
 
+    // แสดงเตือนหลายใบหน้า (ความปลอดภัยในการสอบ)
+    if (data.multipleFaces && data.multipleFaces.isSecurityRisk) {
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.9)'
+      ctx.font = 'bold 20px Arial'
+      ctx.fillText('🚨 เตือน: พบหลายใบหน้าในการสอบ!', 50, 30)
+      ctx.fillStyle = 'rgba(255, 255, 0, 0.8)'
+      ctx.font = '16px Arial'
+      ctx.fillText(`จำนวนใบหน้า: ${data.multipleFaces.count}`, 50, 55)
+    }
+
     // วาด Sci-Fi Face Mesh ด้วย landmarks ทั้ง 468 จุด
     if (data.landmarks && data.landmarks.length > 0) {
       drawSciFiFaceMesh(ctx, data.landmarks, video, canvas.width, canvas.height, data.orientation.isLookingAway)

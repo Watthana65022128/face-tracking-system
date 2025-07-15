@@ -11,6 +11,11 @@ export interface FaceTrackingData {
   confidence: number;
   timestamp: number;
   landmarks?: NormalizedLandmark[];
+  multipleFaces?: {
+    count: number;
+    isSecurityRisk: boolean;
+    warningMessage?: string;
+  };
 }
 
 export class MediaPipeDetector {
@@ -42,7 +47,7 @@ export class MediaPipeDetector {
         outputFaceBlendshapes: false, // ปิดก่อนเพื่อลดภาระ
         outputFacialTransformationMatrixes: false, // ปิดก่อนเพื่อลดภาระ
         runningMode: "VIDEO",
-        numFaces: 1
+        numFaces: 3 // เพิ่มเป็น 3 เพื่อตรวจสอบหลายใบหน้า
       });
 
       this.isInitialized = true;
@@ -71,7 +76,7 @@ export class MediaPipeDetector {
           delegate: "CPU"
         },
         runningMode: "VIDEO",
-        numFaces: 1
+        numFaces: 3 // เพิ่มเป็น 3 เพื่อตรวจสอบหลายใบหน้า
       });
 
       this.isInitialized = true;
@@ -116,16 +121,44 @@ export class MediaPipeDetector {
           isDetected: false,
           orientation: { yaw: 0, pitch: 0, isLookingAway: false },
           confidence: 0,
-          timestamp
+          timestamp,
+          multipleFaces: {
+            count: 0,
+            isSecurityRisk: false
+          }
         };
         
         this.lastDetection = noFaceData;
         return noFaceData;
       }
 
-      const landmarks = results.faceLandmarks[0];
+      // ตรวจสอบจำนวนใบหน้าที่ตรวจพบ
+      const faceCount = results.faceLandmarks.length;
+      let multipleFacesData = {
+        count: faceCount,
+        isSecurityRisk: faceCount > 1,
+        warningMessage: faceCount > 1 ? 
+          `⚠️ ตรวจพบ ${faceCount} ใบหน้า! อาจมีคนอื่นในการสอบ` : 
+          undefined
+      };
+
+      // แจ้งเตือนในคอนโซลหากพบหลายใบหน้า
+      if (faceCount > 1) {
+        console.warn(`🚨 SECURITY ALERT: ตรวจพบ ${faceCount} ใบหน้า! อาจมีคนอื่นในการสอบ`);
+        console.warn('📍 ตำแหน่งใบหน้าทั้งหมด:', results.faceLandmarks.map((face, idx) => ({
+          face: idx + 1,
+          landmarkCount: face.length,
+          noseTip: face[1] // จุดปลายจมูก
+        })));
+      }
+
+      const landmarks = results.faceLandmarks[0]; // ใช้ใบหน้าแรก (ใหญ่ที่สุด)
       console.log('✅ พบใบหน้า! landmarks:', landmarks.length, 'จุด');
       const trackingData = this.analyzeLandmarks(landmarks, timestamp);
+      
+      // เพิ่มข้อมูลหลายใบหน้า
+      trackingData.multipleFaces = multipleFacesData;
+      
       console.log('📈 tracking data:', trackingData);
       
       this.lastDetection = trackingData;

@@ -45,6 +45,19 @@ export function DetectionStats({ data, isActive }: DetectionStatsProps) {
         </div>
       </div>
 
+      {/* Security Alert for Multiple Faces */}
+      {data.multipleFaces && data.multipleFaces.isSecurityRisk && (
+        <div className="mb-3 p-3 rounded bg-red-100 border border-red-300">
+          <div className="flex items-center">
+            <span className="text-red-600 font-bold mr-2">🚨</span>
+            <span className="text-red-800 font-semibold">เตือนความปลอดภัย</span>
+          </div>
+          <div className="text-red-700 text-sm mt-1">
+            ตรวจพบ {data.multipleFaces.count} ใบหน้า - อาจมีคนอื่นในการสอบ
+          </div>
+        </div>
+      )}
+
       {/* Orientation Details */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm mb-3">
         <div className="p-2 rounded bg-blue-100 text-blue-800">
@@ -60,6 +73,18 @@ export function DetectionStats({ data, isActive }: DetectionStatsProps) {
           ทิศทาง: {!data.isDetected ? 'ไม่พบใบหน้า' : getOrientationIndicator(data.orientation.yaw, data.orientation.pitch).direction}
         </div>
       </div>
+
+      {/* Face Count Display */}
+      {data.multipleFaces && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+          <div className={`p-2 rounded ${data.multipleFaces.isSecurityRisk ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+            จำนวนใบหน้า: {data.multipleFaces.count}
+          </div>
+          <div className={`p-2 rounded ${data.multipleFaces.isSecurityRisk ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+            สถานะ: {data.multipleFaces.isSecurityRisk ? 'เสี่ยงต่อความปลอดภัย' : 'ปกติ'}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
