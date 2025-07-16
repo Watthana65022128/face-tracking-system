@@ -65,6 +65,7 @@ enum DetectionType {
   MOUTH_MOVEMENT
   FACE_ORIENTATION
   FACE_DETECTION_LOSS
+  DISTANCE_VIOLATION
 }
 
 model SessionStatistics {
@@ -86,6 +87,11 @@ model SessionStatistics {
   faceDetectionLoss     Int      @default(0)
   totalLossTime         Int      @default(0) // milliseconds
   avgFaceOrientation    Json     // {"yaw": 0, "pitch": 0, "roll": 0}
+  
+  // Distance tracking stats
+  distanceViolations    Int      @default(0)
+  totalDistanceViolationTime Int @default(0) // milliseconds
+  avgEstimatedDistance  Float?   // average distance in cm
   
   calculatedAt          DateTime @default(now())
   

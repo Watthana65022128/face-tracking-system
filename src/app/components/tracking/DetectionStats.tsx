@@ -74,17 +74,35 @@ export function DetectionStats({ data, isActive }: DetectionStatsProps) {
         </div>
       </div>
 
-      {/* Face Count Display */}
-      {data.multipleFaces && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-          <div className={`p-2 rounded ${data.multipleFaces.isSecurityRisk ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-            จำนวนใบหน้า: {data.multipleFaces.count}
+      {/* Distance Alert */}
+      {data.distance?.isTooFar && (
+        <div className="mb-3 p-3 rounded bg-orange-100 border border-orange-300">
+          <div className="flex items-center">
+            <span className="text-orange-600 font-bold mr-2">⚠️</span>
+            <span className="text-orange-800 font-semibold">เตือนระยะห่าง</span>
           </div>
-          <div className={`p-2 rounded ${data.multipleFaces.isSecurityRisk ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-            สถานะ: {data.multipleFaces.isSecurityRisk ? 'เสี่ยงต่อความปลอดภัย' : 'ปกติ'}
+          <div className="text-orange-700 text-sm mt-1">
+            ระยะห่างจากจอมากเกินไป ({data.distance.estimatedCm}cm) - เข้าใกล้ให้ใกล้กว่า 80cm
           </div>
         </div>
       )}
+
+      {/* Face Count and Distance Display */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+        {data.multipleFaces && (
+          <>
+            <div className={`p-2 rounded ${data.multipleFaces.isSecurityRisk ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+              จำนวนใบหน้า: {data.multipleFaces.count}
+            </div>
+            <div className={`p-2 rounded ${data.multipleFaces.isSecurityRisk ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+              สถานะ: {data.multipleFaces.isSecurityRisk ? 'เสี่ยงต่อความปลอดภัย' : 'ปกติ'}
+            </div>
+          </>
+        )}
+        <div className={`p-2 rounded ${data.distance?.isTooFar ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
+          ระยะห่าง: {data.distance?.estimatedCm || 0}cm
+        </div>
+      </div>
     </div>
   )
 }

@@ -16,6 +16,12 @@ export interface FaceTrackingData {
     isSecurityRisk: boolean;
     warningMessage?: string;
   };
+  distance?: {
+    estimatedCm: number;
+    isTooFar: boolean;
+    faceWidth: number;
+    faceHeight: number;
+  };
 }
 
 export class MediaPipeDetector {
@@ -178,12 +184,16 @@ export class MediaPipeDetector {
     // คำนวณการหันหน้า (Face Orientation)
     const orientation = this.calculateFaceOrientation(landmarks);
     
+    // คำนวณระยะห่างใบหน้าจากจอ
+    const distance = this.calculateFaceDistance(landmarks);
+    
     return {
       isDetected: true,
       orientation,
       confidence: 0.95, // MediaPipe มักให้ค่า confidence สูง
       timestamp,
-      landmarks // ส่ง landmarks ทั้ง 468 จุดไปให้ component
+      landmarks, // ส่ง landmarks ทั้ง 468 จุดไปให้ component
+      distance
     };
   }
 
@@ -267,6 +277,58 @@ export class MediaPipeDetector {
     console.log(`   Final - Yaw: ${yaw.toFixed(1)}°, Pitch: ${pitch.toFixed(1)}°, Away: ${isLookingAway}`);
 
     return { yaw, pitch, isLookingAway };
+  }
+
+  private calculateFaceDistance(landmarks: NormalizedLandmark[]) {
+    // ใช้จุดสำคัญสำหรับคำนวณขนาดใบหน้า
+    const leftEar = landmarks[234];      // หูซ้าย
+    const rightEar = landmarks[454];     // หูขวา
+    const forehead = landmarks[10];      // หน้าผาก
+    const chin = landmarks[152];         // คาง
+    
+    // คำนวณความกว้างและความสูงใบหน้า (normalized coordinates 0-1)
+    const faceWidth = Math.abs(leftEar.x - rightEar.x);
+    const faceHeight = Math.abs(forehead.y - chin.y);
+    
+    // Constants สำหรับการคำนวณระยะห่าง
+    // ความกว้างใบหน้าเฉลี่ย = 14-16 cm
+    // ความสูงใบหน้าเฉลี่ย = 18-20 cm
+    const AVERAGE_FACE_WIDTH_CM = 15;
+    const AVERAGE_FACE_HEIGHT_CM = 19;
+    
+    // คำนวณระยะห่างจากขนาดใบหน้าที่ตรวจพบ
+    // สูตร: distance = (actual_size_cm * focal_length) / pixel_size
+    // ใช้ค่าประมาณ focal length = 500-600 pixels สำหรับ webcam ทั่วไป
+    const FOCAL_LENGTH_ESTIMATE = 550;
+    
+    // คำนวณระยะห่างจากความกว้างและความสูง แล้วเอาค่าเฉลี่ย
+    const distanceFromWidth = (AVERAGE_FACE_WIDTH_CM * FOCAL_LENGTH_ESTIMATE) / (faceWidth * 1000);
+    const distanceFromHeight = (AVERAGE_FACE_HEIGHT_CM * FOCAL_LENGTH_ESTIMATE) / (faceHeight * 1000);
+    
+    // ใช้ค่าเฉลี่ยของทั้งสองวิธี
+    const estimatedCm = (distanceFromWidth + distanceFromHeight) / 2;
+    
+    // ตรวจสอบว่าระยะห่างเกิน 80cm หรือไม่
+    const DISTANCE_THRESHOLD_CM = 80;
+    const isTooFar = estimatedCm > DISTANCE_THRESHOLD_CM;
+    
+    // Debug logging
+    console.log(`📏 Distance Calculation:`, {
+      faceWidth: faceWidth.toFixed(4),
+      faceHeight: faceHeight.toFixed(4),
+      distanceFromWidth: distanceFromWidth.toFixed(1),
+      distanceFromHeight: distanceFromHeight.toFixed(1),
+      estimatedCm: estimatedCm.toFixed(1),
+      isTooFar,
+      threshold: DISTANCE_THRESHOLD_CM
+    });
+    
+    return {
+      estimatedCm: Math.round(estimatedCm),
+      isTooFar,
+      faceWidth,
+      faceHeight
+    };
   }
 
   destroy(): void {

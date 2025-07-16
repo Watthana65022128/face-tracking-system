@@ -226,12 +226,23 @@ export function drawStatusInfo(
     `ORIENTATION: ${data.orientation.isLookingAway ? 'LOOKING_AWAY' : 'FOCUSED'}`,
     `YAW: ${data.orientation.yaw.toFixed(1)}°`,
     `PITCH: ${data.orientation.pitch.toFixed(1)}°`,
+    `DISTANCE: ${data.distance?.estimatedCm || 0}cm`,
     `LANDMARKS: ${data.landmarks?.length || 0} POINTS`
   ]
 
   statusTexts.forEach((text, index) => {
-    ctx.fillText(text, 20, canvasHeight - 120 + (index * 22))
+    ctx.fillText(text, 20, canvasHeight - 140 + (index * 22))
   })
+  
+  // แสดงแถบเตือนระยะห่างเกิน 80cm
+  if (data.distance?.isTooFar) {
+    ctx.fillStyle = '#FF0000'
+    ctx.font = 'bold 20px Arial'
+    ctx.fillText('⚠️ ระยะห่างเกินจากจอมากเกินไป!', 20, 40)
+    ctx.fillStyle = '#FFAA00'
+    ctx.font = '16px Arial'
+    ctx.fillText(`เข้าใกล้จอให้ใกล้กว่า 80cm (ปัจจุบัน: ${data.distance.estimatedCm}cm)`, 20, 65)
+  }
   
   ctx.shadowBlur = 0
 }
