@@ -7,9 +7,11 @@ export interface FaceTrackingData {
     yaw: number;
     pitch: number;
     isLookingAway: boolean;
+    direction?: 'LEFT' | 'RIGHT' | 'UP' | 'DOWN' | 'CENTER';
   };
   confidence: number;
   timestamp: number;
+  realTime: string; // เวลาจริงในรูปแบบ HH:mm:ss
   landmarks?: NormalizedLandmark[];
   multipleFaces?: {
     count: number;
@@ -24,6 +26,29 @@ export interface FaceTrackingData {
   };
 }
 
+// Interface สำหรับเก็บ Orientation Event ที่ละเอียด
+export interface OrientationEvent {
+  startTime: string; // เวลาจริงเริ่มต้น (HH:mm:ss)
+  endTime?: string;  // เวลาจริงสิ้นสุด (HH:mm:ss)
+  direction: 'LEFT' | 'RIGHT' | 'UP' | 'DOWN' | 'CENTER';
+  duration?: number; // ระยะเวลาเป็นวินาที
+  maxYaw?: number;   // มุม yaw สูงสุดในช่วงนั้น
+  maxPitch?: number; // มุม pitch สูงสุดในช่วงนั้น
+  isActive: boolean; // กำลังเกิดขึ้นอยู่หรือไม่
+}
+
+// Interface สำหรับสถิติการหันหน้า
+export interface OrientationStats {
+  totalEvents: number;
+  leftTurns: { count: number; totalDuration: number };
+  rightTurns: { count: number; totalDuration: number };
+  lookingUp: { count: number; totalDuration: number };
+  lookingDown: { count: number; totalDuration: number };
+  centerTime: number; // เวลารวมที่มองตรง
+  sessionStartTime: string;
+  lastEventTime?: string;
+}
+
 export class MediaPipeDetector {
   private faceLandmarker: FaceLandmarker | null = null;
   private isInitialized: boolean = false;
@@ -33,6 +58,16 @@ export class MediaPipeDetector {
   private calibrationSamples: number[] = [];
   private calibrationComplete: boolean = false;
   private calibratedNeutralPosition: number = 0.58; // default value
+  
+  // Orientation tracking system
+  private currentOrientationEvent: OrientationEvent | null = null;
+  private orientationHistory: OrientationEvent[] = [];
+  private sessionStartTime: string = '';
+  private isRecording: boolean = false;
+  
+  // Thresholds for direction detection
+  private readonly YAW_THRESHOLD = 25;
+  private readonly PITCH_THRESHOLD = 12;
 
   async initialize(): Promise<boolean> {
     try {
@@ -187,11 +222,20 @@ export class MediaPipeDetector {
     // คำนวณระยะห่างใบหน้าจากจอ
     const distance = this.calculateFaceDistance(landmarks);
     
+    // สร้างเวลาจริง
+    const realTime = new Date().toLocaleTimeString('th-TH', { 
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit', 
+      second: '2-digit'
+    });
+    
     return {
       isDetected: true,
       orientation,
       confidence: 0.95, // MediaPipe มักให้ค่า confidence สูง
       timestamp,
+      realTime,
       landmarks, // ส่ง landmarks ทั้ง 468 จุดไปให้ component
       distance
     };
@@ -276,7 +320,15 @@ export class MediaPipeDetector {
     console.log(`   Pitch Deviation: ${pitchDeviation.toFixed(4)} -> ${pitch.toFixed(1)}° (should be ~0° when looking straight)`);
     console.log(`   Final - Yaw: ${yaw.toFixed(1)}°, Pitch: ${pitch.toFixed(1)}°, Away: ${isLookingAway}`);
 
-    return { yaw, pitch, isLookingAway };
+    // กำหนดทิศทางการหันหน้า
+    const direction = this.getOrientationDirection(yaw, pitch);
+    
+    // บันทึก orientation event หากกำลัง recording
+    if (this.isRecording) {
+      this.recordOrientationEvent(direction, yaw, pitch);
+    }
+
+    return { yaw, pitch, isLookingAway, direction };
   }
 
   private calculateFaceDistance(landmarks: NormalizedLandmark[]) {
@@ -329,6 +381,169 @@ export class MediaPipeDetector {
       faceWidth,
       faceHeight
     };
+  }
+
+  // === Orientation Tracking Methods ===
+  
+  private getOrientationDirection(yaw: number, pitch: number): 'LEFT' | 'RIGHT' | 'UP' | 'DOWN' | 'CENTER' {
+    // ตรวจสอบ yaw ก่อน (หันซ้าย-ขวา)
+    if (Math.abs(yaw) > this.YAW_THRESHOLD) {
+      return yaw > 0 ? 'RIGHT' : 'LEFT';
+    }
+    
+    // ตรวจสอบ pitch (ก้มหน้า-เงยหน้า)
+    if (Math.abs(pitch) > this.PITCH_THRESHOLD) {
+      return pitch > 0 ? 'DOWN' : 'UP';
+    }
+    
+    return 'CENTER';
+  }
+  
+  private recordOrientationEvent(direction: 'LEFT' | 'RIGHT' | 'UP' | 'DOWN' | 'CENTER', yaw: number, pitch: number): void {
+    const currentTime = new Date().toLocaleTimeString('th-TH', { 
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit', 
+      second: '2-digit'
+    });
+    
+    // หากทิศทางเปลี่ยน หรือไม่มี event ปัจจุบัน
+    if (!this.currentOrientationEvent || this.currentOrientationEvent.direction !== direction) {
+      
+      // จบ event เก่า (ถ้ามี)
+      if (this.currentOrientationEvent && this.currentOrientationEvent.isActive) {
+        this.finishCurrentEvent(currentTime);
+      }
+      
+      // เริ่ม event ใหม่
+      this.currentOrientationEvent = {
+        startTime: currentTime,
+        direction,
+        maxYaw: Math.abs(yaw),
+        maxPitch: Math.abs(pitch),
+        isActive: true
+      };
+      
+      console.log(`🎯 เริ่มต้น ${direction} event ที่เวลา ${currentTime}`);
+    } else {
+      // อัปเดต max values ของ event ปัจจุบัน
+      if (this.currentOrientationEvent) {
+        this.currentOrientationEvent.maxYaw = Math.max(this.currentOrientationEvent.maxYaw || 0, Math.abs(yaw));
+        this.currentOrientationEvent.maxPitch = Math.max(this.currentOrientationEvent.maxPitch || 0, Math.abs(pitch));
+      }
+    }
+  }
+  
+  private finishCurrentEvent(endTime: string): void {
+    if (!this.currentOrientationEvent || !this.currentOrientationEvent.isActive) return;
+    
+    // คำนวณระยะเวลา
+    const startTime = this.parseTimeString(this.currentOrientationEvent.startTime);
+    const endTimeMs = this.parseTimeString(endTime);
+    const duration = Math.round((endTimeMs - startTime) / 1000); // แปลงเป็นวินาที
+    
+    // บันทึก event ที่สมบูรณ์
+    const completedEvent: OrientationEvent = {
+      ...this.currentOrientationEvent,
+      endTime,
+      duration,
+      isActive: false
+    };
+    
+    this.orientationHistory.push(completedEvent);
+    
+    console.log(`✅ จบ ${completedEvent.direction} event: ${completedEvent.duration} วินาที (${completedEvent.startTime} - ${completedEvent.endTime})`);
+    console.log(`   Max Yaw: ${completedEvent.maxYaw?.toFixed(1)}°, Max Pitch: ${completedEvent.maxPitch?.toFixed(1)}°`);
+  }
+  
+  private parseTimeString(timeStr: string): number {
+    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+    return hours * 3600000 + minutes * 60000 + seconds * 1000; // milliseconds
+  }
+  
+  // === Session Management ===
+  
+  startRecording(): void {
+    this.isRecording = true;
+    this.sessionStartTime = new Date().toLocaleTimeString('th-TH', { 
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit', 
+      second: '2-digit'
+    });
+    this.orientationHistory = [];
+    this.currentOrientationEvent = null;
+    
+    console.log(`🎬 เริ่มบันทึก orientation tracking ที่เวลา ${this.sessionStartTime}`);
+  }
+  
+  stopRecording(): OrientationEvent[] {
+    this.isRecording = false;
+    
+    // จบ event ปัจจุบัน (ถ้ามี)
+    if (this.currentOrientationEvent && this.currentOrientationEvent.isActive) {
+      const currentTime = new Date().toLocaleTimeString('th-TH', { 
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit', 
+        second: '2-digit'
+      });
+      this.finishCurrentEvent(currentTime);
+    }
+    
+    console.log(`🛑 หยุดบันทึก orientation tracking`);
+    console.log(`📊 รวม ${this.orientationHistory.length} events ที่บันทึกไว้`);
+    
+    return [...this.orientationHistory]; // return copy
+  }
+  
+  getOrientationStats(): OrientationStats {
+    const stats: OrientationStats = {
+      totalEvents: this.orientationHistory.length,
+      leftTurns: { count: 0, totalDuration: 0 },
+      rightTurns: { count: 0, totalDuration: 0 },
+      lookingUp: { count: 0, totalDuration: 0 },
+      lookingDown: { count: 0, totalDuration: 0 },
+      centerTime: 0,
+      sessionStartTime: this.sessionStartTime,
+      lastEventTime: this.orientationHistory[this.orientationHistory.length - 1]?.endTime
+    };
+    
+    this.orientationHistory.forEach(event => {
+      const duration = event.duration || 0;
+      
+      switch (event.direction) {
+        case 'LEFT':
+          stats.leftTurns.count++;
+          stats.leftTurns.totalDuration += duration;
+          break;
+        case 'RIGHT':
+          stats.rightTurns.count++;
+          stats.rightTurns.totalDuration += duration;
+          break;
+        case 'UP':
+          stats.lookingUp.count++;
+          stats.lookingUp.totalDuration += duration;
+          break;
+        case 'DOWN':
+          stats.lookingDown.count++;
+          stats.lookingDown.totalDuration += duration;
+          break;
+        case 'CENTER':
+          stats.centerTime += duration;
+          break;
+      }
+    });
+    
+    return stats;
+  }
+  
+  getDetailedOrientationHistory(): OrientationEvent[] {
+    return [...this.orientationHistory];
+  }
+  
+  isCurrentlyRecording(): boolean {
+    return this.isRecording;
   }
 
   destroy(): void {

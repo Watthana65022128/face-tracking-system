@@ -1,13 +1,16 @@
 'use client'
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { MediaPipeDetector, FaceTrackingData } from '@/lib/mediapipe-detector'
+import { MediaPipeDetector, FaceTrackingData, OrientationEvent, OrientationStats } from '@/lib/mediapipe-detector'
 
 export function useFaceDetection() {
   const [isActive, setIsActive] = useState(false)
   const [currentData, setCurrentData] = useState<FaceTrackingData | null>(null)
+  const [isRecording, setIsRecording] = useState(false)
+  const [orientationStats, setOrientationStats] = useState<OrientationStats | null>(null)
   
   const detectorRef = useRef<MediaPipeDetector | null>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const statsIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const initializeDetector = useCallback(async () => {
     if (!detectorRef.current) {
@@ -78,12 +81,72 @@ export function useFaceDetection() {
     }
   }, [])
 
+  // เริ่มบันทึก orientation data
+  const startRecording = useCallback(() => {
+    if (!detectorRef.current) return false
+    
+    detectorRef.current.startRecording()
+    setIsRecording(true)
+    
+    // อัปเดตสถิติทุก 2 วินาที
+    statsIntervalRef.current = setInterval(() => {
+      if (detectorRef.current) {
+        const stats = detectorRef.current.getOrientationStats()
+        setOrientationStats(stats)
+      }
+    }, 2000)
+    
+    console.log('🎬 เริ่มบันทึก orientation data')
+    return true
+  }, [])
+  
+  // หยุดบันทึกและคืนค่าข้อมูล
+  const stopRecording = useCallback((): OrientationEvent[] => {
+    if (!detectorRef.current) return []
+    
+    const events = detectorRef.current.stopRecording()
+    setIsRecording(false)
+    
+    // หยุด stats interval
+    if (statsIntervalRef.current) {
+      clearInterval(statsIntervalRef.current)
+      statsIntervalRef.current = null
+    }
+    
+    // อัปเดตสถิติครั้งสุดท้าย
+    const finalStats = detectorRef.current.getOrientationStats()
+    setOrientationStats(finalStats)
+    
+    console.log('🛑 หยุดบันทึก orientation data')
+    console.log('📊 ข้อมูลที่บันทึกได้:', events)
+    
+    return events
+  }, [])
+  
+  // ดึงข้อมูลสถิติปัจจุบัน
+  const getCurrentStats = useCallback((): OrientationStats | null => {
+    if (!detectorRef.current) return null
+    return detectorRef.current.getOrientationStats()
+  }, [])
+  
+  // ดึงประวัติ orientation events ทั้งหมด
+  const getOrientationHistory = useCallback((): OrientationEvent[] => {
+    if (!detectorRef.current) return []
+    return detectorRef.current.getDetailedOrientationHistory()
+  }, [])
+
   return {
     isActive,
     currentData,
+    isRecording,
+    orientationStats,
     initializeDetector,
     startDetection,
     stopDetection,
-    performDetection
+    performDetection,
+    startRecording,
+    stopRecording,
+    getCurrentStats,
+    getOrientationHistory
   }
 }

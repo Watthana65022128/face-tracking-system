@@ -1,0 +1,255 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import jwt from 'jsonwebtoken'
+
+// Interface สำหรับ request body
+interface OrientationEvent {
+  startTime: string;
+  endTime?: string;
+  direction: 'LEFT' | 'RIGHT' | 'UP' | 'DOWN' | 'CENTER';
+  duration?: number;
+  maxYaw?: number;
+  maxPitch?: number;
+  isActive: boolean;
+}
+
+interface OrientationLogRequest {
+  sessionId: string;
+  events: OrientationEvent[];
+  sessionStats: {
+    totalEvents: number;
+    leftTurns: { count: number; totalDuration: number };
+    rightTurns: { count: number; totalDuration: number };
+    lookingUp: { count: number; totalDuration: number };
+    lookingDown: { count: number; totalDuration: number };
+    centerTime: number;
+    sessionStartTime: string;
+    lastEventTime?: string;
+  };
+}
+
+// บันทึกข้อมูล orientation tracking
+export async function POST(request: NextRequest) {
+  try {
+    // ตรวจสอบ authentication
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'ไม่พบ authorization header' }, { status: 401 })
+    }
+
+    const token = authHeader.substring(7)
+    let userId: string
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
+      userId = decoded.userId
+    } catch (error) {
+      return NextResponse.json({ error: 'Token ไม่ถูกต้อง' }, { status: 401 })
+    }
+
+    const body: OrientationLogRequest = await request.json()
+    const { sessionId, events, sessionStats } = body
+
+    // ตรวจสอบว่า session มีอยู่และเป็นของ user คนนี้
+    const session = await prisma.trackingSession.findFirst({
+      where: {
+        id: sessionId,
+        userId: userId
+      }
+    })
+
+    if (!session) {
+      return NextResponse.json({ error: 'ไม่พบ session หรือไม่มีสิทธิ์เข้าถึง' }, { status: 404 })
+    }
+
+    // บันทึกแต่ละ orientation event เป็น TrackingLog
+    const savedLogs = await Promise.all(
+      events.map(async (event) => {
+        return await prisma.trackingLog.create({
+          data: {
+            sessionId: sessionId,
+            detectionType: 'FACE_ORIENTATION',
+            detectionData: {
+              direction: event.direction,
+              startTime: event.startTime,
+              endTime: event.endTime,
+              duration: event.duration,
+              maxYaw: event.maxYaw,
+              maxPitch: event.maxPitch,
+              timestamp: new Date().toISOString()
+            },
+            confidence: 0.95 // MediaPipe มี confidence สูง
+          }
+        })
+      })
+    )
+
+    // อัปเดตหรือสร้าง SessionStatistics
+    const existingStats = await prisma.sessionStatistics.findUnique({
+      where: { sessionId: sessionId }
+    })
+
+    const statsData = {
+      totalEyeMovements: 0, // ยังไม่ได้ implement
+      eyeMovementsByDirection: {
+        LEFT: sessionStats.leftTurns.count,
+        RIGHT: sessionStats.rightTurns.count,
+        UP: sessionStats.lookingUp.count,
+        DOWN: sessionStats.lookingDown.count
+      },
+      avgGazeDeviation: null,
+      timeOffScreen: sessionStats.leftTurns.totalDuration + 
+                     sessionStats.rightTurns.totalDuration + 
+                     sessionStats.lookingUp.totalDuration + 
+                     sessionStats.lookingDown.totalDuration,
+      totalMouthMovements: 0, // ยังไม่ได้ implement
+      mouthMovementDuration: 0,
+      speakingDetected: 0,
+      faceDetectionLoss: 0, // จะต้องเพิ่มจาก face detection
+      totalLossTime: 0,
+      avgFaceOrientation: {
+        totalEvents: sessionStats.totalEvents,
+        centerTime: sessionStats.centerTime,
+        sessionStartTime: sessionStats.sessionStartTime,
+        lastEventTime: sessionStats.lastEventTime
+      },
+      distanceViolations: 0, // จะต้องเพิ่มจาก distance detection
+      totalDistanceViolationTime: 0,
+      avgEstimatedDistance: null
+    }
+
+    let sessionStatistics
+    if (existingStats) {
+      // อัปเดตสถิติที่มีอยู่
+      sessionStatistics = await prisma.sessionStatistics.update({
+        where: { sessionId: sessionId },
+        data: statsData
+      })
+    } else {
+      // สร้างสถิติใหม่
+      sessionStatistics = await prisma.sessionStatistics.create({
+        data: {
+          sessionId: sessionId,
+          ...statsData
+        }
+      })
+    }
+
+    console.log(`✅ บันทึก ${savedLogs.length} orientation events สำหรับ session ${sessionId}`)
+    
+    return NextResponse.json({
+      success: true,
+      message: `บันทึก ${savedLogs.length} orientation events สำเร็จ`,
+      data: {
+        logsCreated: savedLogs.length,
+        sessionStatistics: sessionStatistics,
+        summary: {
+          totalEvents: sessionStats.totalEvents,
+          totalDurationOffScreen: sessionStats.leftTurns.totalDuration + 
+                                   sessionStats.rightTurns.totalDuration + 
+                                   sessionStats.lookingUp.totalDuration + 
+                                   sessionStats.lookingDown.totalDuration,
+          breakdown: {
+            left: `${sessionStats.leftTurns.count} ครั้ง (${sessionStats.leftTurns.totalDuration}วิ)`,
+            right: `${sessionStats.rightTurns.count} ครั้ง (${sessionStats.rightTurns.totalDuration}วิ)`,
+            up: `${sessionStats.lookingUp.count} ครั้ง (${sessionStats.lookingUp.totalDuration}วิ)`,
+            down: `${sessionStats.lookingDown.count} ครั้ง (${sessionStats.lookingDown.totalDuration}วิ)`
+          }
+        }
+      }
+    })
+    
+  } catch (error) {
+    console.error('❌ เกิดข้อผิดพลาดในการบันทึก orientation data:', error)
+    return NextResponse.json(
+      { error: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' },
+      { status: 500 }
+    )
+  }
+}
+
+// ดึงข้อมูล orientation logs ของ session
+export async function GET(request: NextRequest) {
+  try {
+    // ตรวจสอบ authentication
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'ไม่พบ authorization header' }, { status: 401 })
+    }
+
+    const token = authHeader.substring(7)
+    let userId: string
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
+      userId = decoded.userId
+    } catch (error) {
+      return NextResponse.json({ error: 'Token ไม่ถูกต้อง' }, { status: 401 })
+    }
+
+    // ดึง sessionId จาก query parameters
+    const { searchParams } = new URL(request.url)
+    const sessionId = searchParams.get('sessionId')
+
+    if (!sessionId) {
+      return NextResponse.json({ error: 'ไม่พบ sessionId' }, { status: 400 })
+    }
+
+    // ตรวจสอบว่า session เป็นของ user คนนี้
+    const session = await prisma.trackingSession.findFirst({
+      where: {
+        id: sessionId,
+        userId: userId
+      }
+    })
+
+    if (!session) {
+      return NextResponse.json({ error: 'ไม่พบ session หรือไม่มีสิทธิ์เข้าถึง' }, { status: 404 })
+    }
+
+    // ดึงข้อมูล orientation logs
+    const orientationLogs = await prisma.trackingLog.findMany({
+      where: {
+        sessionId: sessionId,
+        detectionType: 'FACE_ORIENTATION'
+      },
+      orderBy: {
+        id: 'asc'
+      }
+    })
+
+    // ดึงสถิติของ session
+    const statistics = await prisma.sessionStatistics.findUnique({
+      where: { sessionId: sessionId }
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        session: {
+          id: session.id,
+          sessionName: session.sessionName,
+          startTime: session.startTime,
+          endTime: session.endTime,
+          totalDuration: session.totalDuration
+        },
+        orientationLogs: orientationLogs,
+        statistics: statistics,
+        summary: {
+          totalLogs: orientationLogs.length,
+          timeRange: {
+            start: session.startTime,
+            end: session.endTime
+          }
+        }
+      }
+    })
+    
+  } catch (error) {
+    console.error('❌ เกิดข้อผิดพลาดในการดึงข้อมูล orientation logs:', error)
+    return NextResponse.json(
+      { error: 'เกิดข้อผิดพลาดในการดึงข้อมูล' },
+      { status: 500 }
+    )
+  }
+}
