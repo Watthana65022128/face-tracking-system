@@ -163,6 +163,7 @@ export class MediaPipeDetector {
           orientation: { yaw: 0, pitch: 0, isLookingAway: false },
           confidence: 0,
           timestamp,
+          realTime: new Date().toLocaleTimeString('th-TH', { hour12: false }),
           multipleFaces: {
             count: 0,
             isSecurityRisk: false
