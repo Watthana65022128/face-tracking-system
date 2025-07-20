@@ -16,7 +16,7 @@ export function ControlPanel({ isActive, onStop }: ControlPanelProps) {
         variant="secondary"
         className="px-8 py-3"
       >
-        ⏹️ หยุดติดตาม
+        ⏹️ หยุดติดตาม & บันทึก
       </Button>
     </div>
   )

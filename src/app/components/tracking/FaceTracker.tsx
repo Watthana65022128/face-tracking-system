@@ -75,7 +75,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     drawStatusInfo(ctx, data, canvas.width, canvas.height)
   }, [])
 
-  // เริ่มการติดตาม
+  // เริ่มการติดตาม และบันทึกข้อมูลอัตโนมัติ
   const startTracking = useCallback(async () => {
     try {
       const cameraInitialized = await initializeCamera(videoRef)
@@ -87,25 +87,20 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
       await initializeDetector()
       
       startDetection(videoRef, drawDetectionOverlay)
+      
+      // เริ่มบันทึกข้อมูลอัตโนมัติ
+      setTimeout(() => {
+        const started = startRecording()
+        if (started) {
+          console.log('🎬 เริ่มบันทึก orientation data อัตโนมัติ')
+        }
+      }, 1000) // รอ 1 วินาทีให้ detection เริ่มทำงาน
     } catch (error) {
       console.error('❌ เกิดข้อผิดพลาดในการเริ่มต้น:', error)
       alert('MediaPipe ไม่สามารถโหลดได้\nกรุณาตรวจสอบ internet connection\nหรือลอง refresh หน้าเว็บ')
     }
-  }, [initializeCamera, initializeDetector, startDetection, drawDetectionOverlay])
+  }, [initializeCamera, initializeDetector, startDetection, drawDetectionOverlay, startRecording])
 
-  // เริ่มบันทึกข้อมูล orientation
-  const handleStartRecording = useCallback(() => {
-    if (!isActive) {
-      alert('กรุณาเริ่มการติดตามใบหน้าก่อน')
-      return
-    }
-    
-    const started = startRecording()
-    if (started) {
-      console.log('🎬 เริ่มบันทึก orientation data แล้ว')
-    }
-  }, [isActive, startRecording])
-  
   // หยุดบันทึกและแสดงผลลัพธ์
   const handleStopRecording = useCallback(async () => {
     const events = stopRecording()
@@ -117,7 +112,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     // TODO: ส่งข้อมูลไป API เพื่อบันทึกลง database
     // สามารถเรียกใช้ /api/tracking/orientation ได้
     
-    alert(`หยุดบันทึกแล้ว!\n\nสรุปผลลัพธ์:\n• หันซ้าย: ${stats?.leftTurns.count || 0} ครั้ง (${stats?.leftTurns.totalDuration || 0} วิ)\n• หันขวา: ${stats?.rightTurns.count || 0} ครั้ง (${stats?.rightTurns.totalDuration || 0} วิ)\n• ก้มหน้า: ${stats?.lookingDown.count || 0} ครั้ง (${stats?.lookingDown.totalDuration || 0} วิ)\n• เงยหน้า: ${stats?.lookingUp.count || 0} ครั้ง (${stats?.lookingUp.totalDuration || 0} วิ)\n• รวม events: ${stats?.totalEvents || 0} ครั้ง`)
+    alert(`หยุดติดตามแล้ว!\n\nสรุปผลลัพธ์:\n• หันซ้าย: ${stats?.leftTurns.count || 0} ครั้ง (${stats?.leftTurns.totalDuration || 0} วิ)\n• หันขวา: ${stats?.rightTurns.count || 0} ครั้ง (${stats?.rightTurns.totalDuration || 0} วิ)\n• ก้มหน้า: ${stats?.lookingDown.count || 0} ครั้ง (${stats?.lookingDown.totalDuration || 0} วิ)\n• เงยหน้า: ${stats?.lookingUp.count || 0} ครั้ง (${stats?.lookingUp.totalDuration || 0} วิ)\n• รวม events: ${stats?.totalEvents || 0} ครั้ง`)
   }, [stopRecording, getCurrentStats])
 
   // หยุดการติดตาม
@@ -158,43 +153,19 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
         {/* Current Detection Status */}
         <DetectionStats data={currentData} isActive={isActive} />
 
-        {/* Orientation Recording Controls */}
-        <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <h3 className="text-lg font-semibold text-blue-800 mb-3">📊 การบันทึกข้อมูลการหันหน้า</h3>
-          
-          <div className="flex gap-3 mb-3">
-            <button
-              onClick={handleStartRecording}
-              disabled={!isActive || isRecording}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                !isActive || isRecording
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-green-500 text-white hover:bg-green-600'
-              }`}
-            >
-              🎬 เริ่มบันทึกข้อมูล
-            </button>
+        {/* Recording Status Display */}
+        {isActive && (
+          <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h3 className="text-lg font-semibold text-blue-800 mb-3">📊 สถานะการบันทึกข้อมูล</h3>
             
-            <button
-              onClick={handleStopRecording}
-              disabled={!isRecording}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                !isRecording
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-red-500 text-white hover:bg-red-600'
-              }`}
-            >
-              🛑 หยุดบันทึก
-            </button>
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}`}></div>
+              <span className={`text-sm font-medium ${isRecording ? 'text-red-600' : 'text-gray-500'}`}>
+                {isRecording ? 'กำลังบันทึกข้อมูลอัตโนมัติ...' : 'เริ่มต้นระบบบันทึก...'}
+              </span>
+            </div>
           </div>
-          
-          <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}`}></div>
-            <span className={`text-sm font-medium ${isRecording ? 'text-red-600' : 'text-gray-500'}`}>
-              {isRecording ? 'กำลังบันทึกข้อมูล...' : 'ไม่ได้บันทึกข้อมูล'}
-            </span>
-          </div>
-        </div>
+        )}
 
         {/* Live Orientation Statistics */}
         {orientationStats && isRecording && (

@@ -166,11 +166,12 @@ export class MediaPipeDetector {
           multipleFaces: {
             count: 0,
             isSecurityRisk: false
-          }
+          }, 
         };
         
         this.lastDetection = noFaceData;
         return noFaceData;
+        
       }
 
       // ตรวจสอบจำนวนใบหน้าที่ตรวจพบ
@@ -303,7 +304,6 @@ export class MediaPipeDetector {
     let pitch = pitchDeviation * 80; // ลด sensitivity จาก 60 เป็น 80 (ให้ค่าน้อยลง)
     pitch = Math.max(-25, Math.min(25, pitch)); // จำกัด range ±25°
 
-    // **ปรับ threshold ใหม่** - คืนค่าเป็น 15° เหมือนเดิม
     const YAW_THRESHOLD = 25;      // องศา (ยาว/ซ้าย-ขวา)
     const PITCH_THRESHOLD = 12;    // องศา (บน-ล่าง)
     
