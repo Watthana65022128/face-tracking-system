@@ -17,3 +17,8 @@ input[type="password"]::-webkit-textfield-decoration-container,
 input[type="password"]::-webkit-credentials-auto-fill-button {
   display: none;
 }
+
+/* ซ่อน TensorFlow Lite INFO messages ใน browser console */
+.tf-info-hidden {
+  display: none;
+}

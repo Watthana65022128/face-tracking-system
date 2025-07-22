@@ -1,6 +1,16 @@
 // MediaPipe face detection and tracking utilities
 import { FaceLandmarker, FilesetResolver, NormalizedLandmark } from '@mediapipe/tasks-vision';
 
+// ซ่อน TensorFlow Lite INFO messages
+const originalConsoleLog = console.log;
+console.log = (...args) => {
+  const message = args.join(' ');
+  if (message.includes('Created TensorFlow Lite XNNPACK delegate for CPU')) {
+    return; // ไม่แสดง TensorFlow Lite INFO
+  }
+  originalConsoleLog.apply(console, args);
+};
+
 export interface FaceTrackingData {
   isDetected: boolean;
   orientation: {
@@ -148,13 +158,7 @@ export class MediaPipeDetector {
         return null;
       }
 
-      console.log('🔍 เรียก detectForVideo...', { timestamp, videoWidth: video.videoWidth, videoHeight: video.videoHeight });
       const results = this.faceLandmarker.detectForVideo(video, timestamp);
-      console.log('📊 MediaPipe results:', { 
-        hasLandmarks: !!results.faceLandmarks, 
-        landmarkCount: results.faceLandmarks?.length || 0,
-        firstFaceLandmarks: results.faceLandmarks?.[0]?.length || 0
-      });
       
       if (!results.faceLandmarks || results.faceLandmarks.length === 0) {
         console.log('❌ ไม่พบใบหน้าใน MediaPipe results');
