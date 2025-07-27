@@ -8,6 +8,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showFaceVerification, setShowFaceVerification] = useState(false)
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [currentToken, setCurrentToken] = useState<string>('')
   const [error, setError] = useState('')
 
   const handleLogin = async (data: any) => {
@@ -26,6 +27,7 @@ export default function LoginPage() {
       if (response.ok) {
         // ขั้นตอนที่ 1: อีเมล/รหัสผ่านถูกต้อง - ตรวจสอบใบหน้าต่อไป
         setCurrentUser(result.user)
+        setCurrentToken(result.token)
         setShowFaceVerification(true)
         toast.success(`ยินดีต้อนรับคุณ ${result.user.firstName} กรุณายืนยันตัวตนด้วยใบหน้า`)
       } else {
@@ -54,7 +56,7 @@ export default function LoginPage() {
     // ขั้นตอนที่ 2: ตรวจสอบใบหน้าสำเร็จ - เสร็จสิ้นการเข้าสู่ระบบ
     if (currentUser) {
       localStorage.setItem('user', JSON.stringify(currentUser))
-      localStorage.setItem('token', 'verified') // หรือใช้ JWT token จริง
+      localStorage.setItem('token', currentToken)
       
       toast.success('เข้าสู่ระบบสำเร็จ')
       
@@ -67,6 +69,7 @@ export default function LoginPage() {
   const handleFaceVerificationCancel = () => {
     setShowFaceVerification(false)
     setCurrentUser(null)
+    setCurrentToken('')
     toast.error('การยืนยันตัวตนถูกยกเลิก กรุณาลองใหม่อีกครั้ง')
   }
 

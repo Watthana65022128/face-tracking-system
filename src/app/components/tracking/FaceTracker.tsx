@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useCallback, useState } from 'react'
 import { FaceTrackingData } from '@/lib/mediapipe-detector'
 import { Card } from '@/app/components/ui/Card'
 import { VideoPlayer } from './VideoPlayer'
@@ -9,6 +9,7 @@ import { ControlPanel } from './ControlPanel'
 import { useCamera } from '@/hooks/useCamera'
 import { useFaceDetection } from '@/hooks/useFaceDetection'
 import { drawSciFiFaceMesh, drawStatusInfo } from '@/lib/face-mesh-utils'
+import toast from 'react-hot-toast'
 
 interface FaceTrackerProps {
   onTrackingStop: () => void
@@ -18,6 +19,11 @@ interface FaceTrackerProps {
 export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ' }: FaceTrackerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  
+  // State สำหรับ session management
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [apiError, setApiError] = useState<string | null>(null)
 
   // ใช้ custom hooks
   const { initializeCamera, stopCamera } = useCamera()
@@ -31,8 +37,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     stopDetection,
     startRecording,
     stopRecording,
-    getCurrentStats,
-    getOrientationHistory
+    getCurrentStats
   } = useFaceDetection()
 
   // วาดการแสดงผลบน canvas
@@ -75,9 +80,92 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     drawStatusInfo(ctx, data, canvas.width, canvas.height)
   }, [])
 
+  // ฟังก์ชันสร้าง tracking session
+  const createTrackingSession = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      setApiError(null)
+
+      const token = localStorage.getItem('token')
+      console.log('🔑 Token check:', token ? 'มี token' : 'ไม่มี token')
+      if (!token) {
+        throw new Error('ไม่พบ token การเข้าสู่ระบบ กรุณา Login ก่อน')
+      }
+
+      const response = await fetch('/api/tracking/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          sessionName: sessionName
+        })
+      })
+
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'ไม่สามารถสร้าง session ได้')
+      }
+
+      setCurrentSessionId(result.data.sessionId)
+      console.log('✅ สร้าง tracking session สำเร็จ:', result.data.sessionId)
+      
+      return result.data.sessionId
+    } catch (error) {
+      console.error('❌ เกิดข้อผิดพลาดในการสร้าง session:', error)
+      setApiError(error instanceof Error ? error.message : 'เกิดข้อผิดพลาดไม่ทราบสาเหตุ')
+      return null
+    } finally {
+      setIsLoading(false)
+    }
+  }, [sessionName])
+
+  // ฟังก์ชันจบ tracking session
+  const endTrackingSession = useCallback(async (sessionId: string) => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('ไม่พบ token การเข้าสู่ระบบ')
+      }
+
+      const response = await fetch('/api/tracking/sessions', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          sessionId: sessionId
+        })
+      })
+
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'ไม่สามารถจบ session ได้')
+      }
+
+      console.log('✅ จบ tracking session สำเร็จ:', result.data)
+      return result.data
+    } catch (error) {
+      console.error('❌ เกิดข้อผิดพลาดในการจบ session:', error)
+      setApiError(error instanceof Error ? error.message : 'เกิดข้อผิดพลาดไม่ทราบสาเหตุ')
+      return null
+    }
+  }, [])
+
   // เริ่มการติดตาม และบันทึกข้อมูลอัตโนมัติ
   const startTracking = useCallback(async () => {
     try {
+      // สร้าง tracking session ก่อน
+      const sessionId = await createTrackingSession()
+      if (!sessionId) {
+        alert('ไม่สามารถสร้าง tracking session ได้\nกรุณาตรวจสอบการเข้าสู่ระบบ')
+        return
+      }
+
       const cameraInitialized = await initializeCamera(videoRef)
       if (!cameraInitialized) {
         alert('ไม่สามารถเข้าถึงกล้องได้ กรุณาตรวจสอบการอนุญาต')
@@ -92,14 +180,71 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
       setTimeout(() => {
         const started = startRecording()
         if (started) {
-          console.log('🎬 เริ่มบันทึก orientation data อัตโนมัติ')
+          console.log('🎬 เริ่มบันทึก orientation data อัตโนมัติ สำหรับ session:', sessionId)
         }
       }, 1000) // รอ 1 วินาทีให้ detection เริ่มทำงาน
     } catch (error) {
       console.error('❌ เกิดข้อผิดพลาดในการเริ่มต้น:', error)
       alert('MediaPipe ไม่สามารถโหลดได้\nกรุณาตรวจสอบ internet connection\nหรือลอง refresh หน้าเว็บ')
     }
-  }, [initializeCamera, initializeDetector, startDetection, drawDetectionOverlay, startRecording])
+  }, [initializeCamera, initializeDetector, startDetection, drawDetectionOverlay, startRecording, createTrackingSession])
+
+  // ฟังก์ชันส่งข้อมูลไป API
+  const saveOrientationData = useCallback(async (sessionId: string, events: unknown[], stats: unknown) => {
+    try {
+      setIsLoading(true)
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('ไม่พบ token การเข้าสู่ระบบ')
+      }
+
+      // แปลงข้อมูล events ให้ตรงกับ API format
+      const orientationEvents = (events as Array<{
+        startTime: string;
+        endTime: string;
+        direction: string;
+        duration: number;
+        maxYaw?: number;
+        maxPitch?: number;
+      }>).map(event => ({
+        startTime: event.startTime,
+        endTime: event.endTime,
+        direction: event.direction,
+        duration: event.duration,
+        maxYaw: event.maxYaw || 0,
+        maxPitch: event.maxPitch || 0,
+        isActive: false
+      }))
+
+      const response = await fetch('/api/tracking/orientation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          sessionId: sessionId,
+          events: orientationEvents,
+          sessionStats: stats as Record<string, unknown>
+        })
+      })
+
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'ไม่สามารถบันทึกข้อมูลได้')
+      }
+
+      console.log('✅ บันทึกข้อมูล orientation สำเร็จ:', result.data)
+      return result.data
+    } catch (error) {
+      console.error('❌ เกิดข้อผิดพลาดในการบันทึกข้อมูล:', error)
+      setApiError(error instanceof Error ? error.message : 'เกิดข้อผิดพลาดไม่ทราบสาเหตุ')
+      return null
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
   // หยุดบันทึกและแสดงผลลัพธ์
   const handleStopRecording = useCallback(async () => {
@@ -109,11 +254,45 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     console.log('📊 สถิติการหันหน้า:', stats)
     console.log('📝 รายละเอียด events:', events)
     
-    // TODO: ส่งข้อมูลไป API เพื่อบันทึกลง database
-    // สามารถเรียกใช้ /api/tracking/orientation ได้
-    
-    alert(`หยุดติดตามแล้ว!\n\nสรุปผลลัพธ์:\n• หันซ้าย: ${stats?.leftTurns.count || 0} ครั้ง (${stats?.leftTurns.totalDuration || 0} วิ)\n• หันขวา: ${stats?.rightTurns.count || 0} ครั้ง (${stats?.rightTurns.totalDuration || 0} วิ)\n• ก้มหน้า: ${stats?.lookingDown.count || 0} ครั้ง (${stats?.lookingDown.totalDuration || 0} วิ)\n• เงยหน้า: ${stats?.lookingUp.count || 0} ครั้ง (${stats?.lookingUp.totalDuration || 0} วิ)\n• รวม events: ${stats?.totalEvents || 0} ครั้ง`)
-  }, [stopRecording, getCurrentStats])
+    // บันทึกข้อมูลลง database
+    if (currentSessionId && events && stats) {
+      setIsLoading(true)
+      const saveResult = await saveOrientationData(currentSessionId, events, stats)
+      
+      if (saveResult) {
+        // จบ tracking session
+        await endTrackingSession(currentSessionId)
+        
+        const statsData = stats as {
+          leftTurns: { count: number; totalDuration: number };
+          rightTurns: { count: number; totalDuration: number };
+          lookingDown: { count: number; totalDuration: number };
+          lookingUp: { count: number; totalDuration: number };
+          totalEvents: number;
+        }
+        toast(`บันทึกข้อมูลสำเร็จ! 🎉\n\nสรุปผลลัพธ์:\n• หันซ้าย: ${statsData?.leftTurns?.count || 0} ครั้ง (${statsData?.leftTurns?.totalDuration || 0} วิ)\n• หันขวา: ${statsData?.rightTurns?.count || 0} ครั้ง (${statsData?.rightTurns?.totalDuration || 0} วิ)\n• ก้มหน้า: ${statsData?.lookingDown?.count || 0} ครั้ง (${statsData?.lookingDown?.totalDuration || 0} วิ)\n• เงยหน้า: ${statsData?.lookingUp?.count || 0} ครั้ง (${statsData?.lookingUp?.totalDuration || 0} วิ)\n• รวม events: ${statsData?.totalEvents || 0} ครั้ง\n\n✅ ข้อมูลถูกบันทึกลงฐานข้อมูลแล้ว`)
+      } else {
+        const statsData = stats as {
+          leftTurns: { count: number; totalDuration: number };
+          rightTurns: { count: number; totalDuration: number };
+          lookingDown: { count: number; totalDuration: number };
+          lookingUp: { count: number; totalDuration: number };
+          totalEvents: number;
+        }
+        alert(`เกิดข้อผิดพลาดในการบันทึก! ⚠️\n\nสรุปผลลัพธ์:\n• หันซ้าย: ${statsData?.leftTurns?.count || 0} ครั้ง (${statsData?.leftTurns?.totalDuration || 0} วิ)\n• หันขวา: ${statsData?.rightTurns?.count || 0} ครั้ง (${statsData?.rightTurns?.totalDuration || 0} วิ)\n• ก้มหน้า: ${statsData?.lookingDown?.count || 0} ครั้ง (${statsData?.lookingDown?.totalDuration || 0} วิ)\n• เงยหน้า: ${statsData?.lookingUp?.count || 0} ครั้ง (${statsData?.lookingUp?.totalDuration || 0} วิ)\n• รวม events: ${statsData?.totalEvents || 0} ครั้ง\n\n❌ ไม่สามารถบันทึกลงฐานข้อมูลได้`)
+      }
+      setIsLoading(false)
+    } else {
+      const statsData = stats as {
+        leftTurns: { count: number; totalDuration: number };
+        rightTurns: { count: number; totalDuration: number };
+        lookingDown: { count: number; totalDuration: number };
+        lookingUp: { count: number; totalDuration: number };
+        totalEvents: number;
+      }
+      alert(`หยุดติดตามแล้ว!\n\nสรุปผลลัพธ์:\n• หันซ้าย: ${statsData?.leftTurns?.count || 0} ครั้ง (${statsData?.leftTurns?.totalDuration || 0} วิ)\n• หันขวา: ${statsData?.rightTurns?.count || 0} ครั้ง (${statsData?.rightTurns?.totalDuration || 0} วิ)\n• ก้มหน้า: ${statsData?.lookingDown?.count || 0} ครั้ง (${statsData?.lookingDown?.totalDuration || 0} วิ)\n• เงยหน้า: ${statsData?.lookingUp?.count || 0} ครั้ง (${statsData?.lookingUp?.totalDuration || 0} วิ)\n• รวม events: ${statsData?.totalEvents || 0} ครั้ง`)
+    }
+  }, [stopRecording, getCurrentStats, currentSessionId, saveOrientationData, endTrackingSession])
 
   // หยุดการติดตาม
   const stopTracking = useCallback(() => {
@@ -152,6 +331,38 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
 
         {/* Current Detection Status */}
         <DetectionStats data={currentData} isActive={isActive} />
+
+        {/* API Error Display */}
+        {apiError && (
+          <div className="mb-4 p-4 bg-red-50 rounded-lg border border-red-200">
+            <h3 className="text-lg font-semibold text-red-800 mb-2">⚠️ เกิดข้อผิดพลาด</h3>
+            <p className="text-sm text-red-600">{apiError}</p>
+            <button 
+              onClick={() => setApiError(null)}
+              className="mt-2 px-3 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded border"
+            >
+              ปิด
+            </button>
+          </div>
+        )}
+
+        {/* Loading State Display */}
+        {isLoading && (
+          <div className="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+            <div className="flex items-center gap-3">
+              <div className="w-4 h-4 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm font-medium text-yellow-700">กำลังดำเนินการ...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Session Status Display */}
+        {currentSessionId && (
+          <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
+            <h3 className="text-lg font-semibold text-green-800 mb-2">🎯 Session: {sessionName}</h3>
+            <p className="text-sm text-green-600">Session ID: {currentSessionId}</p>
+          </div>
+        )}
 
         {/* Recording Status Display */}
         {isActive && (

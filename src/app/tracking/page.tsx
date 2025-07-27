@@ -35,8 +35,8 @@ export default function TrackingPage() {
       return
     }
 
-    // ตรวจสอบความถูกต้องของ token
-    if (token !== 'verified') {
+    // ตรวจสอบความถูกต้องของ token (JWT format)
+    if (!token.includes('.')) {
       toast.error('Token ไม่ถูกต้อง กรุณาเข้าสู่ระบบใหม่')
       localStorage.removeItem('token')
       localStorage.removeItem('user')
