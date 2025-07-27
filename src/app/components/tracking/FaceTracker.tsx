@@ -21,6 +21,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
   const canvasRef = useRef<HTMLCanvasElement>(null)
   
   // State สำหรับ session management
+  const sessionIdRef = useRef<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
@@ -83,6 +84,12 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
   // ฟังก์ชันสร้าง tracking session
   const createTrackingSession = useCallback(async () => {
     try {
+      // ป้องกันการสร้าง session ซ้ำ
+      if (sessionIdRef.current) {
+        console.log('📌 Session มีอยู่แล้ว:', sessionIdRef.current)
+        return sessionIdRef.current
+      }
+
       setIsLoading(true)
       setApiError(null)
 
@@ -109,6 +116,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
         throw new Error(result.error || 'ไม่สามารถสร้าง session ได้')
       }
 
+      sessionIdRef.current = result.data.sessionId
       setCurrentSessionId(result.data.sessionId)
       console.log('✅ สร้าง tracking session สำเร็จ:', result.data.sessionId)
       
@@ -160,7 +168,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
   const startTracking = useCallback(async () => {
     try {
       // ตรวจสอบว่ามี session อยู่แล้วหรือไม่
-      let sessionId = currentSessionId
+      let sessionId = sessionIdRef.current
       if (!sessionId) {
         // สร้าง tracking session ใหม่เฉพาะเมื่อยังไม่มี
         sessionId = await createTrackingSession()
@@ -324,10 +332,10 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
 
   // Auto-start tracking when component mounts (เพียงครั้งเดียว)
   useEffect(() => {
-    if (!isActive && !currentSessionId) {
+    if (!isActive && !sessionIdRef.current) {
       startTracking()
     }
-  }, [startTracking, isActive, currentSessionId])
+  }, [startTracking, isActive])
 
   return (
     <Card className="w-full h-full">
