@@ -159,11 +159,18 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
   // เริ่มการติดตาม และบันทึกข้อมูลอัตโนมัติ
   const startTracking = useCallback(async () => {
     try {
-      // สร้าง tracking session ก่อน
-      const sessionId = await createTrackingSession()
+      // ตรวจสอบว่ามี session อยู่แล้วหรือไม่
+      let sessionId = currentSessionId
       if (!sessionId) {
-        alert('ไม่สามารถสร้าง tracking session ได้\nกรุณาตรวจสอบการเข้าสู่ระบบ')
-        return
+        // สร้าง tracking session ใหม่เฉพาะเมื่อยังไม่มี
+        sessionId = await createTrackingSession()
+        if (!sessionId) {
+          alert('ไม่สามารถสร้าง tracking session ได้\nกรุณาตรวจสอบการเข้าสู่ระบบ')
+          return
+        }
+        console.log('✅ สร้าง session ใหม่:', sessionId)
+      } else {
+        console.log('📌 ใช้ session ที่มีอยู่:', sessionId)
       }
 
       const cameraInitialized = await initializeCamera(videoRef)
@@ -198,7 +205,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
         throw new Error('ไม่พบ token การเข้าสู่ระบบ')
       }
 
-      // แปลงข้อมูล events ให้ตรงกับ API format
+      // แปลงข้อมูล events ให้ตรงกับ API format (กรอง CENTER ออก)
       const orientationEvents = (events as Array<{
         startTime: string;
         endTime: string;
@@ -206,7 +213,9 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
         duration: number;
         maxYaw?: number;
         maxPitch?: number;
-      }>).map(event => ({
+      }>)
+      .filter(event => event.direction !== 'CENTER') // กรอง CENTER ออก
+      .map(event => ({
         startTime: event.startTime,
         endTime: event.endTime,
         direction: event.direction,
@@ -313,12 +322,12 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     }
   }, [stopCamera])
 
-  // Auto-start tracking when component mounts
+  // Auto-start tracking when component mounts (เพียงครั้งเดียว)
   useEffect(() => {
-    if (!isActive) {
+    if (!isActive && !currentSessionId) {
       startTracking()
     }
-  }, [startTracking, isActive])
+  }, [startTracking, isActive, currentSessionId])
 
   return (
     <Card className="w-full h-full">

@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken'
 interface OrientationEvent {
   startTime: string;
   endTime?: string;
-  direction: 'LEFT' | 'RIGHT' | 'UP' | 'DOWN' | 'CENTER';
+  direction: 'LEFT' | 'RIGHT' | 'UP' | 'DOWN';
   duration?: number;
   maxYaw?: number;
   maxPitch?: number;
