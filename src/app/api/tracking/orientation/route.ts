@@ -89,33 +89,33 @@ export async function POST(request: NextRequest) {
       where: { sessionId: sessionId }
     })
 
+    // === FACE TRACKING STATS ONLY ===
     const statsData = {
-      totalEyeMovements: 0, // ยังไม่ได้ implement
-      eyeMovementsByDirection: {
+      // Face orientation tracking (LEFT/RIGHT/UP/DOWN)
+      faceOrientationsByDirection: {
         LEFT: sessionStats.leftTurns.count,
         RIGHT: sessionStats.rightTurns.count,
         UP: sessionStats.lookingUp.count,
         DOWN: sessionStats.lookingDown.count
       },
-      avgGazeDeviation: null,
+      
+      // เวลารวมที่หันหน้าออกจากจอ
       timeOffScreen: sessionStats.leftTurns.totalDuration + 
                      sessionStats.rightTurns.totalDuration + 
                      sessionStats.lookingUp.totalDuration + 
                      sessionStats.lookingDown.totalDuration,
-      totalMouthMovements: 0, // ยังไม่ได้ implement
-      mouthMovementDuration: 0,
-      speakingDetected: 0,
-      faceDetectionLoss: 0, // จะต้องเพิ่มจาก face detection
+      
+      // Face detection loss tracking (ยังไม่ implement)
+      faceDetectionLoss: 0,
       totalLossTime: 0,
+      
+      // Face orientation statistics  
       avgFaceOrientation: {
         totalEvents: sessionStats.totalEvents,
         centerTime: sessionStats.centerTime,
         sessionStartTime: sessionStats.sessionStartTime,
         lastEventTime: sessionStats.lastEventTime
-      },
-      distanceViolations: 0, // จะต้องเพิ่มจาก distance detection
-      totalDistanceViolationTime: 0,
-      avgEstimatedDistance: null
+      }
     }
 
     let sessionStatistics

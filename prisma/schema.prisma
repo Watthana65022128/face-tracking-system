@@ -72,26 +72,32 @@ model SessionStatistics {
   id                    String   @id @default(cuid())
   sessionId             String   @unique
   
-  // Eye tracking stats
-  totalEyeMovements     Int      @default(0)
-  eyeMovementsByDirection Json   // {"LEFT": 10, "RIGHT": 15, "UP": 5, "DOWN": 8}
-  avgGazeDeviation      Float?
-  timeOffScreen         Int      @default(0) // milliseconds
+  // === FACE TRACKING STATS (Active) ===
+  // Face orientation tracking (LEFT/RIGHT/UP/DOWN)
+  faceOrientationsByDirection Json   // {"LEFT": 10, "RIGHT": 15, "UP": 5, "DOWN": 8}
+  timeOffScreen         Int      @default(0) // milliseconds - เวลารวมที่หันหน้าออกจากจอ
   
-  // Mouth tracking stats
-  totalMouthMovements   Int      @default(0)
-  mouthMovementDuration Int      @default(0) // milliseconds
-  speakingDetected      Int      @default(0)
+  // Face detection loss tracking
+  faceDetectionLoss     Int      @default(0) // จำนวนครั้งที่สูญเสียการตรวจจับใบหน้า
+  totalLossTime         Int      @default(0) // milliseconds - เวลารวมที่สูญเสียการตรวจจับ
   
-  // Face tracking stats
-  faceDetectionLoss     Int      @default(0)
-  totalLossTime         Int      @default(0) // milliseconds
-  avgFaceOrientation    Json     // {"yaw": 0, "pitch": 0, "roll": 0}
+  // Face orientation statistics
+  avgFaceOrientation    Json     // {"totalEvents": 25, "centerTime": 1200, "sessionStartTime": "14:30:00"}
   
-  // Distance tracking stats
-  distanceViolations    Int      @default(0)
-  totalDistanceViolationTime Int @default(0) // milliseconds
-  avgEstimatedDistance  Float?   // average distance in cm
+  // === FUTURE FEATURES (Commented out for Phase 2-3) ===
+  // Eye gaze tracking stats (Phase 3)
+  // totalEyeMovements     Int      @default(0)
+  // avgGazeDeviation      Float?
+  
+  // Mouth movement tracking stats (Phase 2)  
+  // totalMouthMovements   Int      @default(0)
+  // mouthMovementDuration Int      @default(0) // milliseconds
+  // speakingDetected      Int      @default(0)
+  
+  // Distance tracking stats (Future)
+  // distanceViolations    Int      @default(0)
+  // totalDistanceViolationTime Int @default(0) // milliseconds
+  // avgEstimatedDistance  Float?   // average distance in cm
   
   calculatedAt          DateTime @default(now())
   
