@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'สร้าง session สำเร็จ',
       data: {
-        sessionId: newSession.id,
+        sessionId: newSession.id,  
         sessionName: newSession.sessionName,
         startTime: newSession.startTime,
         userId: newSession.userId
@@ -106,9 +106,9 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'ไม่พบ session หรือไม่มีสิทธิ์เข้าถึง' }, { status: 404 })
     }
 
-    // คำนวณระยะเวลารวม
+    // คำนวณระยะเวลารวมเป็นวินาที
     const endTime = new Date()
-    const totalDuration = endTime.getTime() - existingSession.startTime.getTime()
+    const totalDuration = Math.round((endTime.getTime() - existingSession.startTime.getTime()) / 1000)
 
     // อัปเดต session ให้จบ
     const updatedSession = await prisma.trackingSession.update({
@@ -119,7 +119,7 @@ export async function PUT(request: NextRequest) {
       }
     })
 
-    console.log(`✅ จบ tracking session: ${sessionId} (ระยะเวลา: ${Math.round(totalDuration/1000)} วิ)`)
+    console.log(`✅ จบ tracking session: ${sessionId} (ระยะเวลา: ${totalDuration} วิ)`)
     
     return NextResponse.json({
       success: true,
@@ -130,7 +130,7 @@ export async function PUT(request: NextRequest) {
         startTime: updatedSession.startTime,
         endTime: updatedSession.endTime,
         totalDuration: updatedSession.totalDuration,
-        durationInSeconds: Math.round(totalDuration / 1000)
+        durationInSeconds: totalDuration
       }
     })
     
@@ -189,7 +189,7 @@ export async function GET(request: NextRequest) {
           startTime: session.startTime,
           endTime: session.endTime,
           totalDuration: session.totalDuration,
-          durationInSeconds: session.totalDuration ? Math.round(session.totalDuration / 1000) : null,
+          durationInSeconds: session.totalDuration,
           trackingLogsCount: session._count.trackingLogs,
           hasStatistics: !!session.statistics,
           isActive: !session.endTime

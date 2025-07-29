@@ -373,14 +373,6 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
           </div>
         )}
 
-        {/* Session Status Display */}
-        {currentSessionId && (
-          <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
-            <h3 className="text-lg font-semibold text-green-800 mb-2">🎯 Session: {sessionName}</h3>
-            <p className="text-sm text-green-600">Session ID: {currentSessionId}</p>
-          </div>
-        )}
-
         {/* Recording Status Display */}
         {isActive && (
           <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">

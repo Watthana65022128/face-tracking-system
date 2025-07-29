@@ -35,7 +35,7 @@ model TrackingSession {
   sessionName   String?   // ชื่อการสอบ/เซสชัน
   startTime     DateTime  @default(now())
   endTime       DateTime?
-  totalDuration Int?      // milliseconds
+  totalDuration Int?      // seconds
   
   // Relations
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -72,34 +72,32 @@ model SessionStatistics {
   id                    String   @id @default(cuid())
   sessionId             String   @unique
   
-  // === FACE TRACKING STATS (Active) ===
-  // Face orientation tracking (LEFT/RIGHT/UP/DOWN)
+  // === FACE TRACKING SUMMARY (No Duplicated Data) ===
+  // Face orientation counts only - ข้อมูลสรุปจำนวนครั้ง
   faceOrientationsByDirection Json   // {"LEFT": 10, "RIGHT": 15, "UP": 5, "DOWN": 8}
-  timeOffScreen         Int      @default(0) // milliseconds - เวลารวมที่หันหน้าออกจากจอ
   
-  // Face detection loss tracking
+  // Time summary - ข้อมูลสรุปเวลา  
+  timeOffScreen         Int      @default(0) // seconds - เวลารวมที่หันหน้าออกจากจอ
+  
+  // Face detection loss summary
   faceDetectionLoss     Int      @default(0) // จำนวนครั้งที่สูญเสียการตรวจจับใบหน้า
-  totalLossTime         Int      @default(0) // milliseconds - เวลารวมที่สูญเสียการตรวจจับ
+  totalLossTime         Int      @default(0) // seconds - เวลารวมที่สูญเสียการตรวจจับ
   
-  // Face orientation statistics
-  avgFaceOrientation    Json     // {"totalEvents": 25, "centerTime": 1200, "sessionStartTime": "14:30:00"}
+  // === REMOVED DUPLICATED DATA ===
+  // avgFaceOrientation - ลบออก เพราะ compute ได้จาก TrackingLog
+  // totalEvents - ลบออก เพราะ COUNT ได้จาก TrackingLog  
+  // centerTime - ลบออก เพราะไม่เก็บใน TrackingLog อยู่แล้ว
+  // sessionStartTime - ลบออก เพราะมีใน TrackingSession.startTime แล้ว
   
-  // === FUTURE FEATURES (Commented out for Phase 2-3) ===
-  // Eye gaze tracking stats (Phase 3)
-  // totalEyeMovements     Int      @default(0)
-  // avgGazeDeviation      Float?
-  
+  // === FUTURE FEATURES (Phase 2-3) ===
   // Mouth movement tracking stats (Phase 2)  
   // totalMouthMovements   Int      @default(0)
   // mouthMovementDuration Int      @default(0) // milliseconds
   // speakingDetected      Int      @default(0)
   
-  // Distance tracking stats (Future)
-  // distanceViolations    Int      @default(0)
-  // totalDistanceViolationTime Int @default(0) // milliseconds
-  // avgEstimatedDistance  Float?   // average distance in cm
-  
-  calculatedAt          DateTime @default(now())
+  // Eye gaze tracking stats (Phase 3)
+  // totalEyeMovements     Int      @default(0)
+  // avgGazeDeviation      Float?
   
   // Relations
   session               TrackingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)

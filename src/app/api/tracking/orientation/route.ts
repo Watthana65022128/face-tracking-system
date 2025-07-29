@@ -89,9 +89,9 @@ export async function POST(request: NextRequest) {
       where: { sessionId: sessionId }
     })
 
-    // === FACE TRACKING STATS ONLY ===
+    // === FACE TRACKING SUMMARY (No Duplicated Data) ===
     const statsData = {
-      // Face orientation tracking (LEFT/RIGHT/UP/DOWN)
+      // Face orientation counts only - ข้อมูลสรุปจำนวนครั้ง
       faceOrientationsByDirection: {
         LEFT: sessionStats.leftTurns.count,
         RIGHT: sessionStats.rightTurns.count,
@@ -99,23 +99,21 @@ export async function POST(request: NextRequest) {
         DOWN: sessionStats.lookingDown.count
       },
       
-      // เวลารวมที่หันหน้าออกจากจอ
+      // Time summary - ข้อมูลสรุปเวลา
       timeOffScreen: sessionStats.leftTurns.totalDuration + 
                      sessionStats.rightTurns.totalDuration + 
                      sessionStats.lookingUp.totalDuration + 
                      sessionStats.lookingDown.totalDuration,
       
-      // Face detection loss tracking (ยังไม่ implement)
+      // Face detection loss summary (ยังไม่ implement)
       faceDetectionLoss: 0,
-      totalLossTime: 0,
+      totalLossTime: 0
       
-      // Face orientation statistics  
-      avgFaceOrientation: {
-        totalEvents: sessionStats.totalEvents,
-        centerTime: sessionStats.centerTime,
-        sessionStartTime: sessionStats.sessionStartTime,
-        lastEventTime: sessionStats.lastEventTime
-      }
+      // === REMOVED DUPLICATED DATA ===
+      // avgFaceOrientation - ลบออก เพราะ compute ได้จาก TrackingLog
+      // totalEvents - ลบออก เพราะ COUNT ได้จาก TrackingLog  
+      // centerTime - ลบออก เพราะไม่เก็บใน TrackingLog อยู่แล้ว
+      // sessionStartTime - ลบออก เพราะมีใน TrackingSession.startTime แล้ว
     }
 
     let sessionStatistics
