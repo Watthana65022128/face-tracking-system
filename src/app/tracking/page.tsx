@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/app/components/ui/Button'
 import { Card } from '@/app/components/ui/Card'
 import { LogoutConfirmation } from '@/app/components/ui/LogoutConfirmation'
@@ -14,6 +15,7 @@ interface User {
 }
 
 export default function TrackingPage() {
+  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [isTracking, setIsTracking] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
@@ -88,7 +90,15 @@ export default function TrackingPage() {
     setIsTracking(false)
     // บันทึกข้อมูลการติดตาม
     console.log('Tracking completed:', trackingData)
-    alert(`การติดตามเสร็จสิ้น เวลารวม: ${formatTime(trackingData.duration)}`)
+    
+    // แสดง toast และเด้งกลับไปหน้าก่อนหน้า
+    toast.success(`การติดตามเสร็จสิ้น เวลารวม: ${formatTime(trackingData.duration)}`, {
+      duration: 3000
+    })
+    
+    setTimeout(() => {
+      router.back()
+    }, 3000)
   }
 
   const handleLogoutClick = () => {
