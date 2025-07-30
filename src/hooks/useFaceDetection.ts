@@ -30,8 +30,7 @@ export function useFaceDetection() {
     if (!detectorRef.current || !videoRef.current) return
 
     try {
-      const timestamp = performance.now()
-      const trackingData = await detectorRef.current.detectFromVideo(videoRef.current, timestamp)
+      const trackingData = await detectorRef.current.detectFromVideo(videoRef.current)
       
       if (trackingData) {
         setCurrentData(trackingData)

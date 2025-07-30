@@ -75,8 +75,7 @@ export async function POST(request: NextRequest) {
               endTime: event.endTime,
               duration: event.duration,
               maxYaw: event.maxYaw,
-              maxPitch: event.maxPitch,
-              timestamp: new Date().toISOString()
+              maxPitch: event.maxPitch
             },
             confidence: 0.95 // MediaPipe มี confidence สูง
           }

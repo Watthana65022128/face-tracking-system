@@ -20,7 +20,6 @@ export interface FaceTrackingData {
     direction?: 'LEFT' | 'RIGHT' | 'UP' | 'DOWN' | 'CENTER';
   };
   confidence: number;
-  timestamp: number;
   realTime: string; // เวลาจริงในรูปแบบ HH:mm:ss
   landmarks?: NormalizedLandmark[];
   multipleFaces?: {
@@ -139,7 +138,7 @@ export class MediaPipeDetector {
     }
   }
 
-  async detectFromVideo(video: HTMLVideoElement, timestamp: number): Promise<FaceTrackingData | null> {
+  async detectFromVideo(video: HTMLVideoElement): Promise<FaceTrackingData | null> {
     if (!this.isInitialized || !this.faceLandmarker) {
       console.warn('⚠️ MediaPipe ยังไม่พร้อมใช้งาน');
       return null;
@@ -158,7 +157,7 @@ export class MediaPipeDetector {
         return null;
       }
 
-      const results = this.faceLandmarker.detectForVideo(video, timestamp);
+      const results = this.faceLandmarker.detectForVideo(video, performance.now());
       
       if (!results.faceLandmarks || results.faceLandmarks.length === 0) {
         console.log('❌ ไม่พบใบหน้าใน MediaPipe results');
@@ -166,7 +165,6 @@ export class MediaPipeDetector {
           isDetected: false,
           orientation: { yaw: 0, pitch: 0, isLookingAway: false },
           confidence: 0,
-          timestamp,
           realTime: new Date().toLocaleTimeString('th-TH', { hour12: false }),
           multipleFaces: {
             count: 0,
@@ -201,7 +199,7 @@ export class MediaPipeDetector {
 
       const landmarks = results.faceLandmarks[0]; // ใช้ใบหน้าแรก (ใหญ่ที่สุด)
       console.log('✅ พบใบหน้า! landmarks:', landmarks.length, 'จุด');
-      const trackingData = this.analyzeLandmarks(landmarks, timestamp);
+      const trackingData = this.analyzeLandmarks(landmarks);
       
       // เพิ่มข้อมูลหลายใบหน้า
       trackingData.multipleFaces = multipleFacesData;
@@ -221,7 +219,7 @@ export class MediaPipeDetector {
     return this.lastDetection;
   }
 
-  private analyzeLandmarks(landmarks: NormalizedLandmark[], timestamp: number): FaceTrackingData {
+  private analyzeLandmarks(landmarks: NormalizedLandmark[]): FaceTrackingData {
     // คำนวณการหันหน้า (Face Orientation)
     const orientation = this.calculateFaceOrientation(landmarks);
     
@@ -240,7 +238,6 @@ export class MediaPipeDetector {
       isDetected: true,
       orientation,
       confidence: 0.95, // MediaPipe มักให้ค่า confidence สูง
-      timestamp,
       realTime,
       landmarks, // ส่ง landmarks ทั้ง 468 จุดไปให้ component
       distance
