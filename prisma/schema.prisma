@@ -33,7 +33,7 @@ model TrackingSession {
   id            String    @id @default(cuid())
   userId        String
   sessionName   String?   // ชื่อการสอบ/เซสชัน
-  startTime     DateTime  @default(now())
+  startTime     DateTime
   endTime       DateTime?
   totalDuration Int?      // seconds
   

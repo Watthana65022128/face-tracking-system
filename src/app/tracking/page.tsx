@@ -4,6 +4,7 @@ import { Button } from '@/app/components/ui/Button'
 import { Card } from '@/app/components/ui/Card'
 import { LogoutConfirmation } from '@/app/components/ui/LogoutConfirmation'
 import { FaceTracker } from '@/app/components/tracking/FaceTracker'
+import { getThailandTime, calculateDurationInSeconds } from '@/lib/utils/datetime'
 import { toast } from 'react-hot-toast'
 
 interface User {
@@ -65,8 +66,7 @@ export default function TrackingPage() {
 
     if (isTracking && trackingData.startTime) {
       interval = setInterval(() => {
-        const now = new Date()
-        const duration = Math.floor((now.getTime() - trackingData.startTime!.getTime()) / 1000)
+        const duration = calculateDurationInSeconds(trackingData.startTime!)
         setTrackingData(prev => ({ ...prev, duration }))
       }, 1000)
     }
@@ -79,7 +79,7 @@ export default function TrackingPage() {
   const handleStartTracking = () => {
     setTrackingData(prev => ({
       ...prev,
-      startTime: new Date()
+      startTime: getThailandTime()
     }))
     setIsTracking(true)
   }

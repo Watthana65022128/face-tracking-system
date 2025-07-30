@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
+import { getThailandTime, calculateDurationInSeconds } from '@/lib/utils/datetime'
 
 // Interface สำหรับ request body
 interface CreateSessionRequest {
@@ -37,12 +38,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'กรุณาระบุชื่อ session' }, { status: 400 })
     }
 
-    // สร้าง tracking session ใหม่
+    // สร้าง tracking session ใหม่ พร้อมเวลาไทย (UTC+7)
     const newSession = await prisma.trackingSession.create({
       data: {
         userId: userId,
         sessionName: sessionName,
-        startTime: new Date()
+        startTime: getThailandTime()
       }
     })
 
@@ -106,9 +107,9 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'ไม่พบ session หรือไม่มีสิทธิ์เข้าถึง' }, { status: 404 })
     }
 
-    // คำนวณระยะเวลารวมเป็นวินาที
-    const endTime = new Date()
-    const totalDuration = Math.round((endTime.getTime() - existingSession.startTime.getTime()) / 1000)
+    // คำนวณระยะเวลารวมเป็นวินาที พร้อมเวลาไทย (UTC+7)  
+    const endTime = getThailandTime()
+    const totalDuration = calculateDurationInSeconds(existingSession.startTime, endTime)
 
     // อัปเดต session ให้จบ
     const updatedSession = await prisma.trackingSession.update({
