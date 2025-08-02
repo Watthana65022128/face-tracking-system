@@ -58,6 +58,13 @@ export interface OrientationEvent {
   isActive: boolean; // กำลังเกิดขึ้นอยู่หรือไม่
 }
 
+export interface FaceDetectionLossEvent {
+  startTime: string; // เวลาจริงเริ่มต้น (HH:mm:ss)
+  endTime?: string;  // เวลาจริงสิ้นสุด (HH:mm:ss)
+  duration?: number; // ระยะเวลาเป็นวินาที
+  isActive: boolean; // กำลังเกิดขึ้นอยู่หรือไม่
+}
+
 // Interface สำหรับสถิติการหันหน้า
 export interface OrientationStats {
   totalEvents: number;
@@ -85,6 +92,13 @@ export class MediaPipeDetector {
   private orientationHistory: OrientationEvent[] = [];
   private sessionStartTime: string = '';
   private isRecording: boolean = false;
+  
+  // Face detection loss tracking
+  private currentFaceDetectionLossEvent: FaceDetectionLossEvent | null = null;
+  private faceDetectionLossHistory: FaceDetectionLossEvent[] = [];
+  private lastFaceDetectedTime: number = Date.now();
+  private consecutiveLossFrames: number = 0;
+  private readonly LOSS_THRESHOLD_FRAMES = 5; // ถือว่า loss เมื่อไม่พบ 5 frames ติด
   
   // Thresholds for direction detection
   private readonly YAW_THRESHOLD = 25;
@@ -173,6 +187,10 @@ export class MediaPipeDetector {
       
       if (!results.faceLandmarks || results.faceLandmarks.length === 0) {
         console.log('❌ ไม่พบใบหน้าใน MediaPipe results');
+        
+        // บันทึก face detection loss
+        this.handleFaceDetectionLoss();
+        
         const noFaceData: FaceTrackingData = {
           isDetected: false,
           orientation: { yaw: 0, pitch: 0, isLookingAway: false },
@@ -211,6 +229,10 @@ export class MediaPipeDetector {
 
       const landmarks = results.faceLandmarks[0]; // ใช้ใบหน้าแรก (ใหญ่ที่สุด)
       console.log('✅ พบใบหน้า! landmarks:', landmarks.length, 'จุด');
+      
+      // บันทึกว่าพบใบหน้าแล้ว (reset loss tracking)
+      this.handleFaceDetectionRecovered();
+      
       const trackingData = this.analyzeLandmarks(landmarks);
       
       // เพิ่มข้อมูลหลายใบหน้า
@@ -488,7 +510,11 @@ export class MediaPipeDetector {
     this.orientationHistory = [];
     this.currentOrientationEvent = null;
     
+    // Reset face detection loss statistics เมื่อเริ่ม session ใหม่
+    this.resetFaceDetectionLossStats();
+    
     console.log(`🎬 เริ่มบันทึก orientation tracking ที่เวลา ${this.sessionStartTime}`);
+    console.log(`🔄 Reset face detection loss statistics สำหรับ session ใหม่`);
   }
   
   stopRecording(): OrientationEvent[] {
@@ -558,6 +584,89 @@ export class MediaPipeDetector {
   
   isCurrentlyRecording(): boolean {
     return this.isRecording;
+  }
+
+  // === Face Detection Loss Management ===
+  
+  private handleFaceDetectionLoss(): void {
+    this.consecutiveLossFrames++;
+    
+    // ถ้าเป็นครั้งแรกที่ loss (consecutive frames >= threshold)
+    if (this.consecutiveLossFrames === this.LOSS_THRESHOLD_FRAMES) {
+      const now = new Date();
+      const startTime = now.toLocaleTimeString('th-TH', { hour12: false });
+      
+      this.currentFaceDetectionLossEvent = {
+        startTime,
+        isActive: true
+      };
+      
+      console.log(`🚨 Face Detection Loss Event - เริ่มต้น loss event`);
+      console.log(`   Consecutive loss frames: ${this.consecutiveLossFrames}`);
+      console.log(`   เวลาเริ่ม loss: ${startTime}`);
+    }
+    
+    // หากยังคง loss ต่อเนื่อง
+    if (this.consecutiveLossFrames > this.LOSS_THRESHOLD_FRAMES) {
+      console.log(`⏳ Face Detection Loss ยังคงดำเนินต่อ... frame ${this.consecutiveLossFrames}`);
+    }
+  }
+  
+  private handleFaceDetectionRecovered(): void {
+    // หากกำลัง loss อยู่และเพิ่งพบใบหน้าอีกครั้ง
+    if (this.consecutiveLossFrames >= this.LOSS_THRESHOLD_FRAMES && this.currentFaceDetectionLossEvent) {
+      const now = new Date();
+      const endTime = now.toLocaleTimeString('th-TH', { hour12: false });
+      
+      // คำนวณระยะเวลา
+      const startTimeParts = this.currentFaceDetectionLossEvent.startTime.split(':');
+      const endTimeParts = endTime.split(':');
+      
+      const startTimeMs = (parseInt(startTimeParts[0]) * 3600 + parseInt(startTimeParts[1]) * 60 + parseInt(startTimeParts[2])) * 1000;
+      const endTimeMs = (parseInt(endTimeParts[0]) * 3600 + parseInt(endTimeParts[1]) * 60 + parseInt(endTimeParts[2])) * 1000;
+      
+      const duration = Math.max(1, Math.round((endTimeMs - startTimeMs) / 1000));
+      
+      // อัพเดท event และเพิ่มลง history
+      this.currentFaceDetectionLossEvent.endTime = endTime;
+      this.currentFaceDetectionLossEvent.duration = duration;
+      this.currentFaceDetectionLossEvent.isActive = false;
+      
+      this.faceDetectionLossHistory.push({ ...this.currentFaceDetectionLossEvent });
+      
+      console.log(`✅ Face Detection Recovered! Loss Event สิ้นสุด`);
+      console.log(`   ระยะเวลา loss: ${duration} วินาที`);
+      console.log(`   เวลา: ${this.currentFaceDetectionLossEvent.startTime} → ${endTime}`);
+      console.log(`   รวม loss events: ${this.faceDetectionLossHistory.length} ครั้ง`);
+      
+      // Reset current event
+      this.currentFaceDetectionLossEvent = null;
+    }
+    
+    // Reset consecutive loss frames counter
+    this.consecutiveLossFrames = 0;
+    this.lastFaceDetectedTime = Date.now();
+  }
+  
+  getFaceDetectionLossStats(): { lossCount: number; totalLossTime: number } {
+    const totalLossTime = this.faceDetectionLossHistory.reduce((total, event) => total + (event.duration || 0), 0);
+    return {
+      lossCount: this.faceDetectionLossHistory.length,
+      totalLossTime
+    };
+  }
+  
+  getFaceDetectionLossEvents(): FaceDetectionLossEvent[] {
+    return [...this.faceDetectionLossHistory];
+  }
+  
+  resetFaceDetectionLossStats(): void {
+    this.faceDetectionLossHistory = [];
+    this.currentFaceDetectionLossEvent = null;
+    this.consecutiveLossFrames = 0;
+    this.lastFaceDetectedTime = Date.now();
+    
+    console.log('🔄 Reset face detection loss statistics');
   }
 
   destroy(): void {

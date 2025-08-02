@@ -38,7 +38,9 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     stopDetection,
     startRecording,
     stopRecording,
-    getCurrentStats
+    getCurrentStats,
+    getFaceDetectionLossStats,
+    getFaceDetectionLossEvents
   } = useFaceDetection()
 
   // วาดการแสดงผลบน canvas
@@ -217,7 +219,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
   }, [initializeCamera, initializeDetector, startDetection, drawDetectionOverlay, startRecording]) // เอา createTrackingSession ออกจาก dependencies
 
   // ฟังก์ชันส่งข้อมูลไป API
-  const saveOrientationData = useCallback(async (sessionId: string, events: unknown[], stats: unknown) => {
+  const saveOrientationData = useCallback(async (sessionId: string, events: unknown[], stats: unknown, faceDetectionLossStats?: { lossCount: number; totalLossTime: number }, faceDetectionLossEvents?: unknown[]) => {
     try {
       setIsLoading(true)
       const token = localStorage.getItem('token')
@@ -254,7 +256,9 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
         body: JSON.stringify({
           sessionId: sessionId,
           events: orientationEvents,
-          sessionStats: stats as Record<string, unknown>
+          sessionStats: stats as Record<string, unknown>,
+          faceDetectionLoss: faceDetectionLossStats || { lossCount: 0, totalLossTime: 0 },
+          faceDetectionLossEvents: faceDetectionLossEvents || []
         })
       })
 
@@ -279,14 +283,17 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
   const handleStopRecording = useCallback(async () => {
     const events = stopRecording()
     const stats = getCurrentStats()
+    const faceDetectionLossStats = getFaceDetectionLossStats()
     
     console.log('📊 สถิติการหันหน้า:', stats)
     console.log('📝 รายละเอียด events:', events)
+    console.log('🚨 สถิติ Face Detection Loss:', faceDetectionLossStats)
     
     // บันทึกข้อมูลลง database
     if (currentSessionId && events && stats) {
       setIsLoading(true)
-      const saveResult = await saveOrientationData(currentSessionId, events, stats)
+      const faceDetectionLossEvents = getFaceDetectionLossEvents()
+      const saveResult = await saveOrientationData(currentSessionId, events, stats, faceDetectionLossStats, faceDetectionLossEvents)
       
       if (saveResult) {
         // จบ tracking session
@@ -302,7 +309,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
           lookingUp: { count: number; totalDuration: number };
           totalEvents: number;
         }
-        toast(`บันทึกข้อมูลสำเร็จ! 🎉\n\nสรุปผลลัพธ์:\n• หันซ้าย: ${statsData?.leftTurns?.count || 0} ครั้ง (${statsData?.leftTurns?.totalDuration || 0} วิ)\n• หันขวา: ${statsData?.rightTurns?.count || 0} ครั้ง (${statsData?.rightTurns?.totalDuration || 0} วิ)\n• ก้มหน้า: ${statsData?.lookingDown?.count || 0} ครั้ง (${statsData?.lookingDown?.totalDuration || 0} วิ)\n• เงยหน้า: ${statsData?.lookingUp?.count || 0} ครั้ง (${statsData?.lookingUp?.totalDuration || 0} วิ)\n• รวม events: ${statsData?.totalEvents || 0} ครั้ง\n\n✅ ข้อมูลถูกบันทึกลงฐานข้อมูลแล้ว`)
+        toast(`บันทึกข้อมูลสำเร็จ! 🎉\n\nสรุปผลลัพธ์:\n• หันซ้าย: ${statsData?.leftTurns?.count || 0} ครั้ง (${statsData?.leftTurns?.totalDuration || 0} วิ)\n• หันขวา: ${statsData?.rightTurns?.count || 0} ครั้ง (${statsData?.rightTurns?.totalDuration || 0} วิ)\n• ก้มหน้า: ${statsData?.lookingDown?.count || 0} ครั้ง (${statsData?.lookingDown?.totalDuration || 0} วิ)\n• เงยหน้า: ${statsData?.lookingUp?.count || 0} ครั้ง (${statsData?.lookingUp?.totalDuration || 0} วิ)\n• รวม events: ${statsData?.totalEvents || 0} ครั้ง\n🚨 ไม่พบใบหน้า: ${faceDetectionLossStats?.lossCount || 0} ครั้ง (รวม ${faceDetectionLossStats?.totalLossTime || 0} วิ)\n\n✅ ข้อมูลถูกบันทึกลงฐานข้อมูลแล้ว`)
       } else {
         const statsData = stats as {
           leftTurns: { count: number; totalDuration: number };
@@ -439,8 +446,23 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
                 <div className="text-xs text-gray-500">{orientationStats.lookingUp.totalDuration}วิ</div>
               </div>
             </div>
+
+            {/* Face Detection Loss Statistics */}
+            <div className="mt-4 p-3 bg-red-50 rounded border border-red-200">
+              <h4 className="text-md font-semibold text-red-800 mb-2">🚨 สถิติการสูญเสียการตรวจจับใบหน้า</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-2 bg-white rounded border">
+                  <div className="text-xl font-bold text-red-600">{getFaceDetectionLossStats().lossCount}</div>
+                  <div className="text-sm text-gray-600">ครั้งที่ไม่พบใบหน้า</div>
+                </div>
+                <div className="text-center p-2 bg-white rounded border">
+                  <div className="text-xl font-bold text-red-600">{getFaceDetectionLossStats().totalLossTime}</div>
+                  <div className="text-sm text-gray-600">วินาทีรวม</div>
+                </div>
+              </div>
+            </div>
             
-            <div className="flex justify-between text-sm text-gray-600">
+            <div className="flex justify-between text-sm text-gray-600 mt-3">
               <span>📊 รวม {orientationStats.totalEvents} events</span>
               <span>🕐 เริ่มบันทึก: {orientationStats.sessionStartTime}</span>
               {orientationStats.lastEventTime && (

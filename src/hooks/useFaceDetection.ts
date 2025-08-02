@@ -134,6 +134,18 @@ export function useFaceDetection() {
     return detectorRef.current.getDetailedOrientationHistory()
   }, [])
 
+  // ดึงข้อมูลสถิติ face detection loss
+  const getFaceDetectionLossStats = useCallback((): { lossCount: number; totalLossTime: number } => {
+    if (!detectorRef.current) return { lossCount: 0, totalLossTime: 0 }
+    return detectorRef.current.getFaceDetectionLossStats()
+  }, [])
+
+  // ดึงข้อมูล face detection loss events
+  const getFaceDetectionLossEvents = useCallback(() => {
+    if (!detectorRef.current) return []
+    return detectorRef.current.getFaceDetectionLossEvents()
+  }, [])
+
   return {
     isActive,
     currentData,
@@ -146,6 +158,8 @@ export function useFaceDetection() {
     startRecording,
     stopRecording,
     getCurrentStats,
-    getOrientationHistory
+    getOrientationHistory,
+    getFaceDetectionLossStats,
+    getFaceDetectionLossEvents
   }
 }

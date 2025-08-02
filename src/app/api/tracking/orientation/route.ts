@@ -26,6 +26,16 @@ interface OrientationLogRequest {
     sessionStartTime: string;
     lastEventTime?: string;
   };
+  faceDetectionLoss?: {
+    lossCount: number;
+    totalLossTime: number;
+  };
+  faceDetectionLossEvents?: Array<{
+    startTime: string;
+    endTime?: string;
+    duration?: number;
+    isActive: boolean;
+  }>;
 }
 
 // บันทึกข้อมูล orientation tracking
@@ -48,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: OrientationLogRequest = await request.json()
-    const { sessionId, events, sessionStats } = body
+    const { sessionId, events, sessionStats, faceDetectionLoss, faceDetectionLossEvents } = body
 
     // ตรวจสอบว่า session มีอยู่และเป็นของ user คนนี้
     const session = await prisma.trackingSession.findFirst({
@@ -83,6 +93,29 @@ export async function POST(request: NextRequest) {
       })
     )
 
+    // บันทึก Face Detection Loss Events เป็น TrackingLog แยกรายการ (ถ้ามี)
+    let faceDetectionLossLogs = []
+    if (faceDetectionLossEvents && faceDetectionLossEvents.length > 0) {
+      for (const event of faceDetectionLossEvents) {
+        if (!event.isActive && event.endTime && event.duration) {
+          const faceDetectionLossLog = await prisma.trackingLog.create({
+            data: {
+              sessionId: sessionId,
+              detectionType: 'FACE_DETECTION_LOSS',
+              detectionData: {
+                startTime: event.startTime,
+                endTime: event.endTime,
+                duration: event.duration
+              },
+              confidence: 1.0 // การไม่พบใบหน้าเป็นข้อมูลที่แน่นอน
+            }
+          })
+          faceDetectionLossLogs.push(faceDetectionLossLog)
+        }
+      }
+      console.log(`🚨 บันทึก Face Detection Loss: ${faceDetectionLossLogs.length} events, รวม ${faceDetectionLoss?.totalLossTime || 0} วินาที`)
+    }
+
     // อัปเดตหรือสร้าง SessionStatistics
     const existingStats = await prisma.sessionStatistics.findUnique({
       where: { sessionId: sessionId }
@@ -104,9 +137,9 @@ export async function POST(request: NextRequest) {
                      sessionStats.lookingUp.totalDuration + 
                      sessionStats.lookingDown.totalDuration,
       
-      // Face detection loss summary (ยังไม่ implement)
-      faceDetectionLoss: 0,
-      totalLossTime: 0
+      // Face detection loss summary
+      faceDetectionLoss: faceDetectionLoss?.lossCount || 0,
+      totalLossTime: faceDetectionLoss?.totalLossTime || 0
       
       // === REMOVED DUPLICATED DATA ===
       // avgFaceOrientation - ลบออก เพราะ compute ได้จาก TrackingLog
@@ -133,12 +166,17 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`✅ บันทึก ${savedLogs.length} orientation events สำหรับ session ${sessionId}`)
+    if (faceDetectionLossLogs.length > 0) {
+      console.log(`🚨 บันทึก ${faceDetectionLossLogs.length} Face Detection Loss Events สำหรับ session ${sessionId}`)
+    }
     
     return NextResponse.json({
       success: true,
-      message: `บันทึก ${savedLogs.length} orientation events สำเร็จ`,
+      message: `บันทึก ${savedLogs.length} orientation events${faceDetectionLossLogs.length > 0 ? ` + ${faceDetectionLossLogs.length} Face Detection Loss events` : ''} สำเร็จ`,
       data: {
-        logsCreated: savedLogs.length,
+        logsCreated: savedLogs.length + faceDetectionLossLogs.length,
+        orientationLogsCreated: savedLogs.length,
+        faceDetectionLossLogCreated: faceDetectionLossLogs.length,
         sessionStatistics: sessionStatistics,
         summary: {
           totalEvents: sessionStats.totalEvents,
@@ -146,6 +184,10 @@ export async function POST(request: NextRequest) {
                                    sessionStats.rightTurns.totalDuration + 
                                    sessionStats.lookingUp.totalDuration + 
                                    sessionStats.lookingDown.totalDuration,
+          faceDetectionLoss: {
+            count: faceDetectionLoss?.lossCount || 0,
+            totalTime: faceDetectionLoss?.totalLossTime || 0
+          },
           breakdown: {
             left: `${sessionStats.leftTurns.count} ครั้ง (${sessionStats.leftTurns.totalDuration}วิ)`,
             right: `${sessionStats.rightTurns.count} ครั้ง (${sessionStats.rightTurns.totalDuration}วิ)`,
