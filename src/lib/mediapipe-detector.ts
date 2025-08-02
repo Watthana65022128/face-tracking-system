@@ -3,12 +3,24 @@ import { FaceLandmarker, FilesetResolver, NormalizedLandmark } from '@mediapipe/
 
 // ซ่อน TensorFlow Lite INFO messages
 const originalConsoleLog = console.log;
+const originalConsoleInfo = console.info;
+
 console.log = (...args) => {
   const message = args.join(' ');
-  if (message.includes('Created TensorFlow Lite XNNPACK delegate for CPU')) {
-    return; // ไม่แสดง TensorFlow Lite INFO
+  if (message.includes('Created TensorFlow Lite XNNPACK delegate for CPU') || 
+      message.includes('TensorFlow Lite')) {
+    return; // ไม่แสดง TensorFlow Lite messages
   }
   originalConsoleLog.apply(console, args);
+};
+
+console.info = (...args) => {
+  const message = args.join(' ');
+  if (message.includes('Created TensorFlow Lite XNNPACK delegate for CPU') || 
+      message.includes('TensorFlow Lite')) {
+    return; // ไม่แสดง TensorFlow Lite INFO messages
+  }
+  originalConsoleInfo.apply(console, args);
 };
 
 export interface FaceTrackingData {

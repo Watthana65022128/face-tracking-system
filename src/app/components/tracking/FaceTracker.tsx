@@ -81,14 +81,25 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     drawStatusInfo(ctx, data, canvas.width, canvas.height)
   }, [])
 
+  // ตัวแปรป้องกันการสร้าง session พร้อมกัน
+  const sessionCreationInProgress = useRef(false)
+
   // ฟังก์ชันสร้าง tracking session
   const createTrackingSession = useCallback(async () => {
     try {
-      // ป้องกันการสร้าง session ซ้ำ
+      // ป้องกันการสร้าง session ซ้ำแบบเข้มงวด
       if (sessionIdRef.current) {
         console.log('📌 Session มีอยู่แล้ว:', sessionIdRef.current)
         return sessionIdRef.current
       }
+
+      // ป้องกันการเรียกพร้อมกัน (race condition)
+      if (sessionCreationInProgress.current) {
+        console.log('⏳ กำลังสร้าง session อยู่ รอสักครู่...')
+        return null
+      }
+
+      sessionCreationInProgress.current = true
 
       setIsLoading(true)
       setApiError(null)
@@ -127,6 +138,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
       return null
     } finally {
       setIsLoading(false)
+      sessionCreationInProgress.current = false
     }
   }, [sessionName])
 
@@ -202,7 +214,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
       console.error('❌ เกิดข้อผิดพลาดในการเริ่มต้น:', error)
       alert('MediaPipe ไม่สามารถโหลดได้\nกรุณาตรวจสอบ internet connection\nหรือลอง refresh หน้าเว็บ')
     }
-  }, [initializeCamera, initializeDetector, startDetection, drawDetectionOverlay, startRecording, createTrackingSession])
+  }, [initializeCamera, initializeDetector, startDetection, drawDetectionOverlay, startRecording]) // เอา createTrackingSession ออกจาก dependencies
 
   // ฟังก์ชันส่งข้อมูลไป API
   const saveOrientationData = useCallback(async (sessionId: string, events: unknown[], stats: unknown) => {
@@ -279,6 +291,9 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
       if (saveResult) {
         // จบ tracking session
         await endTrackingSession(currentSessionId)
+        // ล้าง session reference และ flags เพื่อป้องกันการใช้ซ้ำ
+        sessionIdRef.current = null
+        sessionCreationInProgress.current = false
         
         const statsData = stats as {
           leftTurns: { count: number; totalDuration: number };
@@ -320,6 +335,9 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     
     stopDetection()
     stopCamera(videoRef)
+    // ล้าง session reference และ flags เมื่อหยุดการติดตาม
+    sessionIdRef.current = null
+    sessionCreationInProgress.current = false
     onTrackingStop()
   }, [stopDetection, stopCamera, onTrackingStop, isRecording, handleStopRecording])
 
@@ -327,15 +345,19 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
   useEffect(() => {
     return () => {
       stopCamera(videoRef)
+      // ล้าง session reference และ flags เมื่อ component ถูก unmount
+      sessionIdRef.current = null
+      sessionCreationInProgress.current = false
     }
   }, [stopCamera])
 
   // Auto-start tracking when component mounts (เพียงครั้งเดียว)
   useEffect(() => {
-    if (!isActive && !sessionIdRef.current) {
+    if (!isActive && !sessionIdRef.current && !isLoading) {
+      console.log('🚀 Auto-starting tracking...')
       startTracking()
     }
-  }, [startTracking, isActive])
+  }, []) // ไม่ใส่ dependencies เพื่อให้รันแค่ครั้งเดียว
 
   return (
     <Card className="w-full h-full">
