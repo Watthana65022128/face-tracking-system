@@ -359,9 +359,11 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
   }, [stopCamera])
 
   // Auto-start tracking when component mounts (เพียงครั้งเดียว)
+  const hasAutoStarted = useRef(false)
   useEffect(() => {
-    if (!isActive && !sessionIdRef.current && !isLoading) {
+    if (!isActive && !sessionIdRef.current && !isLoading && !hasAutoStarted.current) {
       console.log('🚀 Auto-starting tracking...')
+      hasAutoStarted.current = true
       startTracking()
     }
   }, []) // ไม่ใส่ dependencies เพื่อให้รันแค่ครั้งเดียว
