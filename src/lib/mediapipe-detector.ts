@@ -209,7 +209,7 @@ export class MediaPipeDetector {
 
       // ตรวจสอบจำนวนใบหน้าที่ตรวจพบ
       const faceCount = results.faceLandmarks.length;
-      let multipleFacesData = {
+      const multipleFacesData = {
         count: faceCount,
         isSecurityRisk: faceCount > 1,
         warningMessage: faceCount > 1 ? 

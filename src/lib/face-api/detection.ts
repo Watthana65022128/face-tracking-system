@@ -60,6 +60,7 @@ export async function loadFaceApiModels() {
  */
 export async function detectFaceAndGetDescriptor(
   imageElement: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   skipValidation: boolean = false
 ): Promise<number[]> {
   try {
@@ -96,10 +97,10 @@ export async function detectFaceAndGetDescriptor(
     // ส่งคืนลายเซ็นใบหน้า
     return Array.from(detection.descriptor);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("ข้อผิดพลาดในการตรวจจับใบหน้า:", error);
     
-    if (error.message.includes("ไม่พบใบหน้า") || error.message.includes("คุณภาพ")) {
+    if (error instanceof Error && (error.message.includes("ไม่พบใบหน้า") || error.message.includes("คุณภาพ"))) {
       throw error; // ส่งต่อ error message ที่เป็นไทย
     }
     
@@ -145,6 +146,7 @@ export async function detectFacePose(
     }
 
     const landmarks = detection.landmarks;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const expressions = detection.expressions;
     
     // วิเคราะห์ท่าใบหน้าจาก landmarks
@@ -200,6 +202,7 @@ function analyzeFacePose(landmarks: faceapi.FaceLandmarks68): {
   
   // คำนวณระยะห่างระหว่างตาและปาก
   const eyeDistance = Math.abs(leftEye.x - rightEye.x);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const mouthDistance = Math.abs(leftMouth.x - rightMouth.x);
   
   // คำนวณมุมหมุนหน้า (yaw)
@@ -249,7 +252,7 @@ function detectBlinking(landmarks: faceapi.FaceLandmarks68): boolean {
   };
   
   // คำนวณ Eye Aspect Ratio (EAR)
-  function calculateEAR(eye: any) {
+  function calculateEAR(eye: { p1: {x: number, y: number}, p2: {x: number, y: number}, p3: {x: number, y: number}, p4: {x: number, y: number}, p5: {x: number, y: number}, p6: {x: number, y: number} }) {
     // ระยะทางแนวตั้ง
     const vertical1 = Math.sqrt(
       Math.pow(eye.p2.x - eye.p6.x, 2) + Math.pow(eye.p2.y - eye.p6.y, 2)

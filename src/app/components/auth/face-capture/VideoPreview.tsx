@@ -10,7 +10,7 @@ interface VideoPreviewProps {
   isBlinking: boolean;
   poseStableCount: number;
   isPoseReady: boolean;
-  capturedPoses: Record<string, any>;
+  capturedPoses: Record<string, number[]>;
   poseProgress: number;
 }
 

@@ -15,6 +15,7 @@ export function FaceDetectionOverlay({
   currentPoseType,
   isBlinking,
   poseStableCount,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isPoseReady
 }: FaceDetectionOverlayProps) {
   if (!isStreaming || isModelLoading) return null;

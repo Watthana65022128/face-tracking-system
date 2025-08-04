@@ -127,6 +127,7 @@ export default function TrackingPage() {
     setShowLogoutConfirm(false)
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)

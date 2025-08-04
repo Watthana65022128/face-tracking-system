@@ -72,16 +72,16 @@ export const FACE_API_CONFIG = {
 } as const;
 
 // ฟังก์ชันช่วยเหลือสำหรับการจัดการข้อผิดพลาด
-export function handleFaceApiError(error: any): string {
-  if (error.message.includes('ไม่พบใบหน้า')) {
+export function handleFaceApiError(error: unknown): string {
+  if (error instanceof Error && error.message.includes('ไม่พบใบหน้า')) {
     return 'ไม่พบใบหน้าในภาพ กรุณาจัดตำแหน่งใบหน้าให้อยู่ในกรอบ';
   }
   
-  if (error.message.includes('คุณภาพ')) {
+  if (error instanceof Error && error.message.includes('คุณภาพ')) {
     return 'คุณภาพการตรวจจับใบหน้าไม่เพียงพอ กรุณาปรับแสงและตำแหน่ง';
   }
   
-  if (error.message.includes('โมเดล')) {
+  if (error instanceof Error && error.message.includes('โมเดล')) {
     return 'ไม่สามารถโหลดโมเดล AI ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต';
   }
   
@@ -89,7 +89,7 @@ export function handleFaceApiError(error: any): string {
 }
 
 // ฟังก์ชันช่วยเหลือสำหรับการ debug
-export function logFaceApiDebug(message: string, data?: any): void {
+export function logFaceApiDebug(message: string, data?: unknown): void {
   if (process.env.NODE_ENV === 'development') {
     console.log(`[Face API Debug] ${message}`, data || '');
   }
@@ -105,7 +105,7 @@ export function checkWebGLSupport(): boolean {
   try {
     const canvas = document.createElement('canvas');
     return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
-  } catch (e) {
+  } catch {
     return false;
   }
 }

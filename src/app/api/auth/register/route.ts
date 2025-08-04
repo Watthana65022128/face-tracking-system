@@ -152,21 +152,21 @@ export async function POST(request: NextRequest) {
       }
     }, { status: 201 })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('=== Register API Error ===')
     console.error('Error details:', error)
-    console.error('Error message:', error.message)
-    console.error('Error stack:', error.stack)
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error')
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
 
     // ตรวจสอบข้อผิดพลาดฐานข้อมูลเฉพาะ
-    if (error.code === 'P2002') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
       return NextResponse.json(
         { error: 'อีเมลนี้มีการใช้งานแล้ว' },
         { status: 400 }
       )
     }
 
-    if (error.message.includes('connect')) {
+    if (error instanceof Error && error.message.includes('connect')) {
       return NextResponse.json(
         { 
           error: 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้',
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         error: 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์',
-        details: process.env.NODE_ENV === 'development' ? error.message : 'กรุณาลองใหม่อีกครั้ง'
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : 'กรุณาลองใหม่อีกครั้ง'
       },
       { status: 500 }
     )

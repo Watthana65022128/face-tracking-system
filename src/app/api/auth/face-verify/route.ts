@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     console.log('Comparing face descriptors...')
 
     // เปรียบเทียบข้อมูลลักษณะใบหน้า
-    let storedFaceData: any
+    let storedFaceData: Record<string, number[]> | number[]
     
     // แยกข้อมูล JSON ถ้าบันทึกเป็นสตริง
     if (typeof user.faceData === 'string') {
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       storedFaceData = user.faceData
     }
     
-    let distances: { pose: string, distance: number }[] = []
+    const distances: { pose: string, distance: number }[] = []
     let minDistance = Infinity
     let bestMatch = ''
     
@@ -89,8 +89,8 @@ export async function POST(request: NextRequest) {
       const poses = Object.keys(storedFaceData)
       
       for (const pose of poses) {
-        if (Array.isArray(storedFaceData[pose]) && storedFaceData[pose].length === 128) {
-          const distance = euclideanDistance(faceData, storedFaceData[pose])
+        if (Array.isArray((storedFaceData as Record<string, number[]>)[pose]) && (storedFaceData as Record<string, number[]>)[pose].length === 128) {
+          const distance = euclideanDistance(faceData, (storedFaceData as Record<string, number[]>)[pose])
           distances.push({ pose, distance })
           
           if (distance < minDistance) {
@@ -166,13 +166,13 @@ export async function POST(request: NextRequest) {
           : `ใบหน้าไม่ตรงกับข้อมูลที่ลงทะเบียน`
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Face verification error:', error)
     
     return NextResponse.json(
       { 
         error: 'เกิดข้อผิดพลาดในการตรวจสอบใบหน้า',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : undefined
       },
       { status: 500 }
     )

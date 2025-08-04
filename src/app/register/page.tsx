@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { AuthForm } from '@/app/components/auth/AuthForm'
 import { FaceCapture } from '@/app/components/auth/FaceCapture'
 import toast from 'react-hot-toast'
@@ -7,10 +7,21 @@ import toast from 'react-hot-toast'
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [showFaceCapture, setShowFaceCapture] = useState(false)
-  const [userData, setUserData] = useState<any>(null)
+  interface UserData {
+    id?: string;
+    email: string;
+    password: string;
+    title: string;
+    firstName: string;
+    lastName: string;
+    studentId?: string;
+    phoneNumber?: string;
+  }
+  
+  const [userData, setUserData] = useState<UserData | null>(null)
   const [showInstructions, setShowInstructions] = useState(false)
 
-  const handleRegister = async (data: any) => {
+  const handleRegister = async (data: UserData) => {
     setLoading(true)
     
     try {
@@ -72,7 +83,7 @@ export default function RegisterPage() {
     setLoading(true)
     
     try {
-      console.log('Saving multi-pose face data for user:', userData.id)
+      console.log('Saving multi-pose face data for user:', userData.email)
       console.log('Captured poses:', Object.keys(faceDescriptors))
       
       const response = await fetch('/api/auth/face-register', {
@@ -185,7 +196,7 @@ export default function RegisterPage() {
                     <svg className="w-5 h-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p className="text-sm font-medium text-gray-800">พร้อมแล้ว? กดปุ่ม "เริ่มลงทะเบียน" เพื่อดำเนินการต่อ</p>
+                    <p className="text-sm font-medium text-gray-800">พร้อมแล้ว? กดปุ่ม &quot;เริ่มลงทะเบียน&quot; เพื่อดำเนินการต่อ</p>
                   </div>
                 </div>
 

@@ -9,7 +9,7 @@ interface PoseInstructionsProps {
   currentPose: PoseData;
   currentPoseIndex: number;
   poses: PoseData[];
-  capturedPoses: Record<string, any>;
+  capturedPoses: Record<string, number[]>;
   isAllPosesComplete: boolean;
   currentDetectedPose: 'front' | 'left' | 'right' | 'unknown';
   poseConfidence: number;
@@ -21,9 +21,13 @@ export function PoseInstructions({
   currentPoseIndex,
   poses,
   capturedPoses,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isAllPosesComplete,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   currentDetectedPose,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   poseConfidence,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   isBlinking
 }: PoseInstructionsProps) {
   return (

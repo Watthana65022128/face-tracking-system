@@ -1,6 +1,13 @@
 // Face mesh drawing utilities for MediaPipe FaceLandmarker
 import { FaceTrackingData } from './mediapipe-detector'
 
+// MediaPipe landmark type
+interface Landmark {
+  x: number;
+  y: number;
+  z?: number;
+}
+
 // Face landmark indices for different contours
 export const FACE_CONTOURS = {
   // จุดโครงหน้า (Face Oval)
@@ -95,7 +102,7 @@ export function getDrawingColors(isLookingAway: boolean): DrawingColors {
 // วาดเส้นเชื่อมจุด
 export function drawConnectedLines(
   ctx: CanvasRenderingContext2D,
-  landmarks: any[],
+  landmarks: Landmark[],
   indices: number[],
   coordinates: DrawingCoordinates,
   color: string,
@@ -118,8 +125,8 @@ export function drawConnectedLines(
       return
     }
     
-    let startX = landmarks[indices[0]].x * coordinates.scaleX + coordinates.offsetX
-    let startY = landmarks[indices[0]].y * coordinates.scaleY + coordinates.offsetY
+    const startX = landmarks[indices[0]].x * coordinates.scaleX + coordinates.offsetX
+    const startY = landmarks[indices[0]].y * coordinates.scaleY + coordinates.offsetY
     ctx.moveTo(startX, startY)
 
     for (let i = 1; i < indices.length; i++) {
@@ -132,7 +139,7 @@ export function drawConnectedLines(
 
     ctx.stroke()
     ctx.restore()
-  } catch (error) {
+  } catch {
     ctx.restore()
   }
 }
@@ -140,7 +147,7 @@ export function drawConnectedLines(
 // วาดจุด landmarks
 export function drawLandmarkPoints(
   ctx: CanvasRenderingContext2D,
-  landmarks: any[],
+  landmarks: Landmark[],
   coordinates: DrawingCoordinates,
   color: string,
   pointSize: number = 1.5
@@ -168,7 +175,7 @@ export function drawLandmarkPoints(
 // วาดโครงหน้า
 export function drawFaceContours(
   ctx: CanvasRenderingContext2D,
-  landmarks: any[],
+  landmarks: Landmark[],
   coordinates: DrawingCoordinates,
   color: string
 ) {
@@ -178,7 +185,7 @@ export function drawFaceContours(
 // วาดตา
 export function drawEyeContours(
   ctx: CanvasRenderingContext2D,
-  landmarks: any[],
+  landmarks: Landmark[],
   coordinates: DrawingCoordinates,
   color: string
 ) {
@@ -189,7 +196,7 @@ export function drawEyeContours(
 // วาดปาก
 export function drawMouthContours(
   ctx: CanvasRenderingContext2D,
-  landmarks: any[],
+  landmarks: Landmark[],
   coordinates: DrawingCoordinates,
   color: string
 ) {
@@ -200,7 +207,7 @@ export function drawMouthContours(
 // วาดจมูก
 export function drawNoseContours(
   ctx: CanvasRenderingContext2D,
-  landmarks: any[],
+  landmarks: Landmark[],
   coordinates: DrawingCoordinates,
   color: string
 ) {
@@ -250,7 +257,7 @@ export function drawStatusInfo(
 // วาด Sci-Fi Face Mesh แบบสมบูรณ์
 export function drawSciFiFaceMesh(
   ctx: CanvasRenderingContext2D,
-  landmarks: any[],
+  landmarks: Landmark[],
   video: HTMLVideoElement | null,
   canvasWidth: number,
   canvasHeight: number,

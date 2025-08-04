@@ -1,6 +1,6 @@
 interface StatusIndicatorsProps {
   isStreaming: boolean;
-  capturedPoses: Record<string, any>;
+  capturedPoses: Record<string, number[]>;
   currentPoseType: string;
   currentDetectedPose: 'front' | 'left' | 'right' | 'unknown';
   isBlinking: boolean;

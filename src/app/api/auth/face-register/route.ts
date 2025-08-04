@@ -29,7 +29,6 @@ export async function POST(request: NextRequest) {
     }
 
     // ตรวจสอบว่ามีท่าที่จำเป็นหรือไม่
-    const requiredPoses = ['front', 'left', 'right', 'blink']
     const providedPoses = Object.keys(faceData)
     
     // อนุญาตท่าบางส่วน (ต้องมีท่าหน้าตรงอย่างน้อย)
@@ -71,13 +70,13 @@ export async function POST(request: NextRequest) {
       capturedPoses: providedPoses
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('=== Face Register API Error ===')
     console.error('Error details:', error)
-    console.error('Error message:', error.message)
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error')
 
     // ตรวจสอบข้อผิดพลาดเฉพาะของฐานข้อมูล
-    if (error.code === 'P2025') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
       return NextResponse.json(
         { error: 'ไม่พบข้อมูลผู้ใช้' },
         { status: 400 }
@@ -87,7 +86,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         error: 'ไม่สามารถบันทึกข้อมูลใบหน้าได้',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : undefined
       },
       { status: 500 }
     )

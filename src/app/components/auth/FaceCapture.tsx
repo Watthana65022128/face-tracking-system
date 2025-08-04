@@ -23,6 +23,7 @@ interface PoseData {
 
 export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -137,16 +138,16 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
           setError('เกิดข้อผิดพลาดกับวิดีโอ กรุณาลองใหม่')
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('ข้อผิดพลาดกล้อง:', err)
       
-      if (err.name === 'NotAllowedError') {
+      if (err instanceof Error && err.name === 'NotAllowedError') {
         setError('กรุณาอนุญาตการใช้กล้องในเบราว์เซอร์ คลิกที่ไอคอนกล้องในแถบที่อยู่')
-      } else if (err.name === 'NotFoundError') {
+      } else if (err instanceof Error && err.name === 'NotFoundError') {
         setError('ไม่พบกล้องในอุปกรณ์ กรุณาตรวจสอบการเชื่อมต่อกล้อง')
-      } else if (err.name === 'NotReadableError') {
+      } else if (err instanceof Error && err.name === 'NotReadableError') {
         setError('กล้องถูกใช้งานโดยแอปพลิเคชันอื่น กรุณาปิดแอปอื่นที่ใช้กล้อง')
-      } else if (err.name === 'AbortError') {
+      } else if (err instanceof Error && err.name === 'AbortError') {
         setError('การเข้าถึงกล้องถูกยกเลิก กรุณาลองใหม่')
       } else {
         setError('ไม่สามารถเข้าถึงกล้องได้ กรุณาลองใหม่อีกครั้ง')
@@ -180,8 +181,8 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
             setIsBlinking(false);
             setPoseStableCount(0);
           }
-        } catch (error) {
-          console.error('ข้อผิดพลาดในการตรวจจับอย่างต่อเนื่อง:', error);
+        } catch {
+          // Silent error handling for continuous detection
         }
       }
     }, 100);
@@ -197,7 +198,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
   const playSuccessSound = () => {
     try {
       // สร้างเสียงเชิงบวกด้วย Web Audio API
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioContext = new (window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext || AudioContext)();
       
       // เสียงสำหรับแต่ละขั้นตอน (โทนเสียงเพิ่มขึ้น)
       const frequencies = [523.25, 587.33, 659.25, 698.46]; // โนตดนตรี C5, D5, E5, F5
@@ -217,7 +218,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
       
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.3);
-    } catch (error) {
+    } catch {
       console.log('ระบบเสียงไม่ได้รับการสนับสนุนหรือถูกบล็อก');
     }
   };
@@ -225,7 +226,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
   const playCompletionSound = () => {
     try {
       // เสียงสำหรับเสร็จสิ้นทั้งหมด (แบบมีท่วงทำนอง)
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const audioContext = new (window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext || AudioContext)();
       
       const melody = [523.25, 659.25, 783.99, 1046.50]; // ท่วงทำนอง C5, E5, G5, C6
       
@@ -246,7 +247,7 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
         oscillator.start(startTime);
         oscillator.stop(startTime + 0.4);
       });
-    } catch (error) {
+    } catch {
       console.log('ระบบเสียงไม่ได้รับการสนับสนุนหรือถูกบล็อก');
     }
   };
@@ -287,8 +288,8 @@ export function FaceCapture({ onCapture, loading = false }: FaceCaptureProps) {
         setAutoCapturing(false);
       }, 1500);
 
-    } catch (err: any) {
-      setError(err.message || "ไม่สามารถตรวจจับใบหน้าได้ กรุณาลองใหม่");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "ไม่สามารถตรวจจับใบหน้าได้ กรุณาลองใหม่");
       console.error("ข้อผิดพลาดในการจับภาพใบหน้า:", err);
       setIsCapturingPose(false);
       setAutoCapturing(false);

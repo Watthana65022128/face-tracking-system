@@ -22,7 +22,9 @@ export function CaptureStatus({
   currentPoseTitle,
   poseStableCount,
   capturedPosesCount,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onRetake,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onGoToLogin
 }: CaptureStatusProps) {
   if (isAllPosesComplete) {

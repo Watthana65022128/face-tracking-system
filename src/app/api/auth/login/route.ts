@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       },
       token
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์' },
       { status: 500 }

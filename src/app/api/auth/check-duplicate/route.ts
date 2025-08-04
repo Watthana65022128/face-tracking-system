@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // สร้าง where condition แบบ dynamic
-    const whereCondition: any = {}
+    const whereCondition: Record<string, string> = {}
     whereCondition[field] = value
 
     // ตรวจสอบในฐานข้อมูล
@@ -58,13 +58,13 @@ export async function POST(request: NextRequest) {
       value
     })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Check duplicate error:', error)
     
     return NextResponse.json(
       { 
         error: 'เกิดข้อผิดพลาดในการตรวจสอบข้อมูล',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : undefined
       },
       { status: 500 }
     )

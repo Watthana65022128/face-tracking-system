@@ -7,11 +7,23 @@ import toast from 'react-hot-toast'
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showFaceVerification, setShowFaceVerification] = useState(false)
-  const [currentUser, setCurrentUser] = useState<any>(null)
+  interface User {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  }
+  
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [currentToken, setCurrentToken] = useState<string>('')
   const [error, setError] = useState('')
 
-  const handleLogin = async (data: any) => {
+  interface LoginData {
+    email: string;
+    password: string;
+  }
+  
+  const handleLogin = async (data: LoginData) => {
     setLoading(true)
     setError('')
     

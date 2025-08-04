@@ -8,9 +8,20 @@ import { FormHeader } from "./form/FormHeader";
 import { SubmitButton } from "./form/SubmitButton";
 import { FormToggle } from "./form/FormToggle";
 
+interface FormData {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  title: string;
+  firstName: string;
+  lastName: string;
+  studentId: string;
+  phoneNumber: string;
+}
+
 interface AuthFormProps {
   type: "login" | "register";
-  onSubmit: (data: any) => void;
+  onSubmit: (data: FormData) => void;
   loading?: boolean;
 }
 
@@ -26,7 +37,7 @@ export function AuthForm({ type, onSubmit, loading = false }: AuthFormProps) {
     phoneNumber: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [checking, setChecking] = useState<Record<string, boolean>>({});
+  const [, setChecking] = useState<Record<string, boolean>>({});
   const [duplicateErrors, setDuplicateErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {

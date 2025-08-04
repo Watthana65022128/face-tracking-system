@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
       userId = decoded.userId
-    } catch (error) {
+    } catch {
       return NextResponse.json({ error: 'Token ไม่ถูกต้อง' }, { status: 401 })
     }
 
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     )
 
     // บันทึก Face Detection Loss Events เป็น TrackingLog แยกรายการ (ถ้ามี)
-    let faceDetectionLossLogs = []
+    const faceDetectionLossLogs = []
     if (faceDetectionLossEvents && faceDetectionLossEvents.length > 0) {
       for (const event of faceDetectionLossEvents) {
         if (!event.isActive && event.endTime && event.duration) {
@@ -222,7 +222,7 @@ export async function GET(request: NextRequest) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
       userId = decoded.userId
-    } catch (error) {
+    } catch {
       return NextResponse.json({ error: 'Token ไม่ถูกต้อง' }, { status: 401 })
     }
 
@@ -285,7 +285,7 @@ export async function GET(request: NextRequest) {
     })
     
   } catch (error) {
-    console.error('❌ เกิดข้อผิดพลาดในการดึงข้อมูล orientation logs:', error)
+    console.error('❌ เกิดข้อผิดพลาดในการดึงข้อมูل orientation logs:', error)
     return NextResponse.json(
       { error: 'เกิดข้อผิดพลาดในการดึงข้อมูล' },
       { status: 500 }
