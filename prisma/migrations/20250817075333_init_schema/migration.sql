@@ -1,4 +1,7 @@
 -- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'USER');
+
+-- CreateEnum
 CREATE TYPE "DetectionType" AS ENUM ('EYE_MOVEMENT', 'MOUTH_MOVEMENT', 'FACE_ORIENTATION', 'FACE_DETECTION_LOSS', 'DISTANCE_VIOLATION');
 
 -- CreateTable
@@ -12,6 +15,7 @@ CREATE TABLE "users" (
     "studentId" TEXT,
     "phoneNumber" TEXT,
     "faceData" TEXT,
+    "role" "UserRole" NOT NULL DEFAULT 'USER',
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,

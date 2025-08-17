@@ -9,6 +9,11 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum UserRole {
+  ADMIN
+  USER
+}
+
 model User {
   id          String   @id @default(cuid())
   email       String   @unique
@@ -19,6 +24,7 @@ model User {
   studentId   String?  @unique
   phoneNumber String?  // เบอร์โทรศัพท์
   faceData    String?  // Base64 encoded face template for 2FA
+  role        UserRole @default(USER)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
