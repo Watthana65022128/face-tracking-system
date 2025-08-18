@@ -1,31 +1,57 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import jwt from 'jsonwebtoken'
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // Protected routes 5HI-2#2#@I2*9H#0
+  // Protected routes
   const protectedRoutes = ['/tracking']
+  const adminRoutes = ['/admin']
   
-  // #'*-'H2@G protected route +#7-D!H
+  // ตรวจสอบ admin routes
+  const isAdminRoute = adminRoutes.some(route => 
+    pathname.startsWith(route)
+  )
+  
+  // ตรวจสอบ protected routes
   const isProtectedRoute = protectedRoutes.some(route => 
     pathname.startsWith(route)
   )
   
-  if (isProtectedRoute) {
-    // #'*- token 2 cookies +#7- headers
-    const token = request.cookies.get('auth-token')?.value
+  if (isAdminRoute || isProtectedRoute) {
+    // ดึง token จาก cookies หรือ headers
+    const token = request.cookies.get('auth-token')?.value || 
+                  request.cookies.get('token')?.value
     const authHeader = request.headers.get('authorization')
     
-    // I2D!H!5 token C+I redirect D+I2 login
+    // ไม่มี token ให้ redirect ไปหน้า login
     if (!token && !authHeader) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
     }
+
+    // ตรวจสอบ admin routes
+    if (isAdminRoute) {
+      const tokenToVerify = token || authHeader?.replace('Bearer ', '')
+      
+      if (tokenToVerify) {
+        try {
+          const decoded = jwt.verify(tokenToVerify, process.env.JWT_SECRET || 'fallback-secret') as { userId: string; role: string }
+          
+          // ตรวจสอบว่าเป็น ADMIN หรือไม่
+          if (decoded.role !== 'ADMIN') {
+            return NextResponse.redirect(new URL('/tracking', request.url))
+          }
+        } catch {
+          // Token ไม่ถูกต้องให้ redirect ไปหน้า login
+          return NextResponse.redirect(new URL('/login', request.url))
+        }
+      }
+    }
   }
   
-  // I2@G public route +#7-!5 token C+IH2D
   return NextResponse.next()
 }
 

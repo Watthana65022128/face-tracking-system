@@ -46,9 +46,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // สร้าง JWT token
+    // สร้าง JWT token พร้อม role
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { userId: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET || 'fallback-secret',
       { expiresIn: '1d' }
     )
@@ -58,7 +58,8 @@ export async function POST(request: NextRequest) {
         id: user.id,
         email: user.email,
         firstName: user.firstName,
-        lastName: user.lastName
+        lastName: user.lastName,
+        role: user.role
       },
       token
     })

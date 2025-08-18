@@ -20,7 +20,8 @@
       "Bash(mkdir:*)",
       "Bash(npm install:*)",
       "Bash(npm run lint)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npx tsx:*)"
     ],
     "deny": [
       "Bash(git reset --hard:*)",

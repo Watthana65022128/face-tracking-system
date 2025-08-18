@@ -12,6 +12,7 @@ export default function LoginPage() {
     email: string;
     firstName: string;
     lastName: string;
+    role: string;
   }
   
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -37,11 +38,24 @@ export default function LoginPage() {
       const result = await response.json()
 
       if (response.ok) {
-        // ขั้นตอนที่ 1: อีเมล/รหัสผ่านถูกต้อง - ตรวจสอบใบหน้าต่อไป
-        setCurrentUser(result.user)
-        setCurrentToken(result.token)
-        setShowFaceVerification(true)
-        toast.success(`ยินดีต้อนรับคุณ ${result.user.firstName} กรุณายืนยันตัวตนด้วยใบหน้า`)
+        // ตรวจสอบว่าเป็น admin หรือไม่
+        if (result.user.role === 'ADMIN') {
+          // แอดมินไม่ต้องยืนยันใบหน้า เข้าสู่ระบบได้เลย
+          localStorage.setItem('user', JSON.stringify(result.user))
+          localStorage.setItem('token', result.token)
+          
+          toast.success(`ยินดีต้อนรับคุณ ${result.user.firstName} (ผู้ดูแลระบบ)`)
+          
+          setTimeout(() => {
+            window.location.href = '/admin'
+          }, 1500)
+        } else {
+          // ผู้ใช้ทั่วไป - ต้องยืนยันตัวตนด้วยใบหน้า
+          setCurrentUser(result.user)
+          setCurrentToken(result.token)
+          setShowFaceVerification(true)
+          toast.success(`ยินดีต้อนรับคุณ ${result.user.firstName} กรุณายืนยันตัวตนด้วยใบหน้า`)
+        }
       } else {
         // จัดการกรณีข้อผิดพลาดต่าง ๆ
         if (response.status === 401) {
@@ -72,8 +86,11 @@ export default function LoginPage() {
       
       toast.success('เข้าสู่ระบบสำเร็จ')
       
+      // เปลี่ยนเส้นทางตามสิทธิ์ผู้ใช้
+      const redirectPath = currentUser.role === 'ADMIN' ? '/admin' : '/tracking'
+      
       setTimeout(() => {
-        window.location.href = '/tracking'
+        window.location.href = redirectPath
       }, 1500)
     }
   }
