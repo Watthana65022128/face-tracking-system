@@ -51,6 +51,14 @@ export default function TrackingPage() {
       if (!parsedUser.id || !parsedUser.firstName) {
         throw new Error('ข้อมูลผู้ใช้ไม่ครบถ้วน')
       }
+      
+      // ป้องกันไม่ให้ admin เข้าหน้า tracking
+      if (parsedUser.role === 'ADMIN') {
+        toast.error('ผู้ดูแลระบบไม่สามารถเข้าหน้านี้ได้')
+        window.location.href = '/admin'
+        return
+      }
+      
       setUser(parsedUser)
     } catch (error) {
       console.error('Invalid user data:', error)

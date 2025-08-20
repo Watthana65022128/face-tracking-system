@@ -32,22 +32,25 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    // ตรวจสอบ admin routes
-    if (isAdminRoute) {
-      const tokenToVerify = token || authHeader?.replace('Bearer ', '')
-      
-      if (tokenToVerify) {
-        try {
-          const decoded = jwt.verify(tokenToVerify, process.env.JWT_SECRET || 'fallback-secret') as { userId: string; role: string }
-          
-          // ตรวจสอบว่าเป็น ADMIN หรือไม่
-          if (decoded.role !== 'ADMIN') {
-            return NextResponse.redirect(new URL('/tracking', request.url))
-          }
-        } catch {
-          // Token ไม่ถูกต้องให้ redirect ไปหน้า login
-          return NextResponse.redirect(new URL('/login', request.url))
+    const tokenToVerify = token || authHeader?.replace('Bearer ', '')
+    
+    if (tokenToVerify) {
+      try {
+        const decoded = jwt.verify(tokenToVerify, process.env.JWT_SECRET || 'fallback-secret') as { userId: string; role: string }
+        
+        // ตรวจสอบ admin routes - เฉพาะ ADMIN เท่านั้น
+        if (isAdminRoute && decoded.role !== 'ADMIN') {
+          return NextResponse.redirect(new URL('/tracking', request.url))
         }
+        
+        // ตรวจสอบ protected routes (/tracking) - ป้องกัน ADMIN เข้า
+        if (isProtectedRoute && decoded.role === 'ADMIN') {
+          return NextResponse.redirect(new URL('/admin', request.url))
+        }
+        
+      } catch {
+        // Token ไม่ถูกต้องให้ redirect ไปหน้า login
+        return NextResponse.redirect(new URL('/login', request.url))
       }
     }
   }
