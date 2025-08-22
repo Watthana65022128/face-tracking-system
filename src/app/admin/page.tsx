@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/app/components/ui/Card'
 import { Button } from '@/app/components/ui/Button'
 import { AdminLogoutConfirmation } from '@/app/components/ui/AdminLogoutConfirmation'
+import { AdminSidebar } from '@/app/components/admin/AdminSidebar'
 
 interface User {
   id: string
@@ -44,7 +45,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([])
   const [sessions, setSessions] = useState<TrackingSession[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'sessions'>('overview')
+  const [currentPage, setCurrentPage] = useState<string>('overview')
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false)
   const [logoutLoading, setLogoutLoading] = useState(false)
 
@@ -135,12 +136,15 @@ export default function AdminDashboard() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('th-TH', {
+    const date = new Date(dateString)
+    return date.toLocaleString('th-TH', {
       year: 'numeric',
-      month: 'short',
+      month: 'short', 
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      second: '2-digit',
+      timeZone: 'Asia/Bangkok'
     })
   }
 
@@ -164,52 +168,40 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-            <Button
-              onClick={handleLogoutClick}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              ออกจากระบบ
-            </Button>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white flex">
+      {/* Sidebar Navigation */}
+      <AdminSidebar 
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        onLogoutClick={handleLogoutClick}
+      />
 
-      {/* Navigation Tabs */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="bg-white rounded-lg shadow-sm mb-6">
-          <div className="flex border-b">
-            {[
-              { key: 'overview', label: 'ภาพรวม' },
-              { key: 'users', label: 'ผู้ใช้งาน' },
-              { key: 'sessions', label: 'เซสชัน' }
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key as 'overview' | 'users' | 'sessions')}
-                className={`px-6 py-3 font-medium ${
-                  activeTab === tab.key
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+      {/* Main Content Area */}
+      <div className="flex-1 lg:ml-0">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b border-purple-100 py-1">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {getCurrentPageTitle(currentPage)}
+                </h1>
+                <p className="text-sm text-purple-600 mt-1">
+                  {getCurrentPageDescription(currentPage)}
+                </p>
+              </div>
+              {/* Mobile space for hamburger button */}
+              <div className="lg:hidden w-10"></div>
+            </div>
           </div>
         </div>
 
-        {/* Overview Tab */}
-        {activeTab === 'overview' && stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        {/* Page Content */}
+        <div className="p-6">
+
+        {/* Overview Page */}
+        {currentPage === 'overview' && stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
             <Card className="p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-blue-100 mr-4">
@@ -251,25 +243,11 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center">
-                <div className="p-3 rounded-full bg-orange-100 mr-4">
-                  <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">เซสชันที่กำลังทำงาน</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.activeSessions}</p>
-                </div>
-              </div>
-            </Card>
           </div>
         )}
 
-        {/* Users Tab */}
-        {activeTab === 'users' && (
+        {/* Users Page */}
+        {currentPage === 'users' && (
           <Card className="p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">รายการผู้ใช้งาน</h2>
             <div className="overflow-x-auto">
@@ -315,8 +293,8 @@ export default function AdminDashboard() {
           </Card>
         )}
 
-        {/* Sessions Tab */}
-        {activeTab === 'sessions' && (
+        {/* Sessions Page */}
+        {currentPage === 'sessions' && (
           <Card className="p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">รายการเซสชัน</h2>
             <div className="overflow-x-auto">
@@ -363,6 +341,31 @@ export default function AdminDashboard() {
             </div>
           </Card>
         )}
+
+        {/* Real-time Tracking Page */}
+        {currentPage === 'realtime' && (
+          <Card className="p-8 text-center">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="p-4 bg-purple-100 rounded-full">
+                <svg className="w-12 h-12 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Real-time Tracking</h3>
+              <p className="text-gray-600 max-w-md">
+                ฟีเจอร์การติดตามแบบเรียลไทม์จะพร้อมใช้งานในเร็วๆ นี้
+              </p>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-amber-800 text-sm">
+                  🚧 อยู่ระหว่างการพัฒนา - Coming Soon
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
+
+        </div>
       </div>
 
       {/* Admin Logout Confirmation Modal */}
@@ -374,4 +377,25 @@ export default function AdminDashboard() {
       />
     </div>
   )
+}
+
+// Helper functions for page titles and descriptions
+function getCurrentPageTitle(page: string): string {
+  const titles: Record<string, string> = {
+    'overview': 'Dashboard Overview',
+    'users': 'User Management',
+    'sessions': 'Tracking Sessions',
+    'realtime': 'Real-time Tracking'
+  }
+  return titles[page] || 'Admin Dashboard'
+}
+
+function getCurrentPageDescription(page: string): string {
+  const descriptions: Record<string, string> = {
+    'overview': 'ภาพรวมสถิติและข้อมูลระบบ',
+    'users': 'จัดการผู้ใช้งานและสิทธิ์เข้าถึง',
+    'sessions': 'ติดตามเซสชันและสถิติการใช้งาน',
+    'realtime': 'การติดตามแบบเรียลไทม์'
+  }
+  return descriptions[page] || 'ระบบจัดการสำหรับผู้ดูแลระบบ'
 }
