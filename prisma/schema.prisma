@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -67,11 +66,8 @@ model TrackingLog {
 }
 
 enum DetectionType {
-  EYE_MOVEMENT
-  MOUTH_MOVEMENT
   FACE_ORIENTATION
   FACE_DETECTION_LOSS
-  DISTANCE_VIOLATION
 }
 
 model SessionStatistics {
@@ -89,23 +85,6 @@ model SessionStatistics {
   faceDetectionLoss     Int      @default(0) // จำนวนครั้งที่สูญเสียการตรวจจับใบหน้า
   totalLossTime         Int      @default(0) // seconds - เวลารวมที่สูญเสียการตรวจจับ
   
-  // === REMOVED DUPLICATED DATA ===
-  // avgFaceOrientation - ลบออก เพราะ compute ได้จาก TrackingLog
-  // totalEvents - ลบออก เพราะ COUNT ได้จาก TrackingLog  
-  // centerTime - ลบออก เพราะไม่เก็บใน TrackingLog อยู่แล้ว
-  // sessionStartTime - ลบออก เพราะมีใน TrackingSession.startTime แล้ว
-  
-  // === FUTURE FEATURES (Phase 2-3) ===
-  // Mouth movement tracking stats (Phase 2)  
-  // totalMouthMovements   Int      @default(0)
-  // mouthMovementDuration Int      @default(0) // milliseconds
-  // speakingDetected      Int      @default(0)
-  
-  // Eye gaze tracking stats (Phase 3)
-  // totalEyeMovements     Int      @default(0)
-  // avgGazeDeviation      Float?
-  
-  // Relations
   session               TrackingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   
   @@map("session_statistics")
