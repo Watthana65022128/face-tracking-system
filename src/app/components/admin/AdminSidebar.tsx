@@ -163,7 +163,7 @@ export function AdminSidebar({ currentPage, onPageChange, onLogoutClick }: Admin
       </nav>
 
       {/* Logout Section */}
-      <div className="p-4 border-t border-purple-200">
+      <div className="p-4 border-purple-200">
         <div
           className="group flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-200 text-red-600 hover:bg-red-50 hover:text-red-700"
           onClick={onLogoutClick}
@@ -198,7 +198,7 @@ export function AdminSidebar({ currentPage, onPageChange, onLogoutClick }: Admin
             className="absolute inset-0 bg-black bg-opacity-50"
             onClick={() => setIsMobileOpen(false)}
           />
-          <div className="absolute left-0 top-0 h-full w-80 bg-white shadow-2xl">
+          <div className="absolute left-0 top-0 h-full w-64 bg-white shadow-2xl">
             <SidebarContent />
           </div>
         </div>
@@ -206,7 +206,7 @@ export function AdminSidebar({ currentPage, onPageChange, onLogoutClick }: Admin
 
       {/* Desktop Sidebar */}
       <div className="hidden lg:flex lg:flex-shrink-0">
-        <div className="w-80 bg-white shadow-xl border-r border-purple-100">
+        <div className="w-64 bg-white shadow-xl border-r border-purple-100">
           <SidebarContent />
         </div>
       </div>
