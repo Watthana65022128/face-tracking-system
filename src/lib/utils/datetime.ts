@@ -3,24 +3,21 @@
  * รองรับเวลาไทย (UTC+7) และการแปลงข้อมูลเวลา
  */
 
-// เวลาเขต UTC offset สำหรับประเทศไทย (UTC+7)
-const THAILAND_UTC_OFFSET = 7 * 60 * 60 * 1000; // 7 ชั่วโมง * 60 นาที * 60 วินาที * 1000 มิลลิวินาที
-
 /**
- * สร้าง Date object ด้วยเวลาไทย (UTC+7)
- * @returns Date object ที่ปรับเป็นเวลาไทยแล้ว
+ * สร้าง Date object ด้วยเวลาไทยปัจจุบัน
+ * @returns Date object ปัจจุบัน
  */
 export function getThailandTime(): Date {
-  return new Date(new Date().getTime() + THAILAND_UTC_OFFSET);
+  return new Date(); // JavaScript Date จัดการ timezone ผ่าน system setting
 }
 
 /**
- * แปลง Date object เป็นเวลาไทย
+ * แปลง Date object เป็นรูปแบบเวลาไทย
  * @param date - Date object ที่ต้องการแปลง
- * @returns Date object ที่ปรับเป็นเวลาไทยแล้ว
+ * @returns Date object เดิม (ไม่ต้องแปลง เพราะ Date จัดการ timezone เอง)
  */
 export function toThailandTime(date: Date): Date {
-  return new Date(date.getTime() + THAILAND_UTC_OFFSET);
+  return date; // คืนค่าเดิม เพราะ Date object จัดการ timezone แล้ว
 }
 
 /**
@@ -55,8 +52,15 @@ export function formatDuration(seconds: number): string {
  * @returns string รูปแบบ YYYY-MM-DD HH:mm:ss
  */
 export function formatThaiDateTime(date: Date): string {
-  const thailandDate = toThailandTime(date);
-  return thailandDate.toISOString().slice(0, 19).replace('T', ' ');
+  return date.toLocaleString('sv-SE', { // สวีเดนใช้ format ISO ที่เราต้องการ
+    timeZone: 'Asia/Bangkok',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }).replace(' ', ' '); // YYYY-MM-DD HH:mm:ss
 }
 
 /**
@@ -65,8 +69,13 @@ export function formatThaiDateTime(date: Date): string {
  * @returns string รูปแบบ HH:mm:ss
  */
 export function formatThaiTime(date: Date): string {
-  const thailandDate = toThailandTime(date);
-  return thailandDate.toISOString().slice(11, 19);
+  return date.toLocaleTimeString('en-GB', { // อังกฤษใช้ HH:mm:ss format
+    timeZone: 'Asia/Bangkok',
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
 }
 
 /**
@@ -76,10 +85,8 @@ export function formatThaiTime(date: Date): string {
  * @returns true ถ้าอยู่ในวันเดียวกัน
  */
 export function isSameDay(date1: Date, date2: Date): boolean {
-  const thai1 = toThailandTime(date1);
-  const thai2 = toThailandTime(date2);
+  const format1 = date1.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' }); // YYYY-MM-DD
+  const format2 = date2.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' }); // YYYY-MM-DD
   
-  return thai1.getFullYear() === thai2.getFullYear() &&
-         thai1.getMonth() === thai2.getMonth() &&
-         thai1.getDate() === thai2.getDate();
+  return format1 === format2;
 }
