@@ -21,8 +21,8 @@ This is a Next.js 15 tracking system with face recognition authentication and be
 
 - **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: Custom JWT-based auth with face recognition using face-api.js (fully implemented)
-- **Storage**: Supabase for additional services
-- **Real-time Tracking**: MediaPipe for behavioral analysis + Supabase Realtime for live data streaming
+- **Storage**: PostgreSQL with Prisma ORM
+- **Real-time Tracking**: MediaPipe for behavioral analysis
 - **Frontend**: React 19 with TypeScript and Tailwind CSS 4.1
 - **API**: Next.js App Router API routes
 - **Security**: bcryptjs for password hashing, JWT for tokens
@@ -56,12 +56,12 @@ This is a Next.js 15 tracking system with face recognition authentication and be
 - **Live Analytics Dashboard**: Real-time statistics including detection counts and attention rates
 - **Performance Optimized Detection**: 100ms interval processing with robust error handling
 
-**✅ Completed Features (Real-time Logging):**
-- **Real-time Face Detection Logging**: Supabase Realtime integration for live data streaming
-- **Batch Processing System**: 5-second intervals for efficient database operations
-- **Live Dashboard Updates**: Real-time detection logs with WebSocket streaming
-- **Performance Optimized Logging**: Batched inserts with error handling and retry logic
-- **Comprehensive Detection Events**: Face presence/absence, orientation changes, confidence tracking
+**✅ Completed Features (Admin Dashboard):**
+- **Advanced Admin Dashboard**: Complete session management with detailed analytics
+- **Detection Logging**: Real-time face detection event tracking and storage
+- **Session Analytics**: Behavioral tracking with statistical analysis
+- **User Management**: Enhanced admin interface with comprehensive user data
+- **Performance Optimized System**: Efficient database operations with proper indexing
 
 **🔄 Future Development (Commented Out):**
 <!-- 
@@ -84,7 +84,7 @@ The system tracks user behavior through four main entities:
 ## Key Dependencies
 
 - `@prisma/client` (6.10.1) - Database ORM
-- `@supabase/supabase-js` (2.50.2) - Real-time data streaming and storage services
+- `@prisma/client` (6.10.1) - Enhanced database operations
 - `face-api.js` (0.22.2) - Face recognition and detection
 - `@mediapipe/tasks-vision` (0.10.22) - Advanced facial analysis and behavioral tracking with 468-point FaceLandmarker
 - `@mediapipe/drawing_utils` (0.3.1675466124) - MediaPipe visualization utilities
@@ -97,13 +97,13 @@ The system tracks user behavior through four main entities:
 
 - `src/app/api/auth/` - Authentication endpoints (login, register, face-register, face-verify, check-duplicate)
 - `src/app/api/tracking/` - Real-time behavioral tracking endpoints (sessions, logs, statistics)
-- `src/lib/` - Shared utilities (Prisma client, Supabase client, validation, face-api with pose detection)
+- `src/lib/` - Shared utilities (Prisma client, validation, face-api with pose detection)
 - `src/lib/mediapipe-detector.ts` - MediaPipe FaceLandmarker integration with real-time tracking
 - `src/app/components/auth/` - Authentication UI components (AuthForm, FaceCapture, FaceLogin)
 - `src/app/components/auth/face-capture/` - Modular face capture sub-components
 - `src/app/components/tracking/` - Real-time behavioral tracking components
 - `src/app/components/ui/` - Enhanced UI components with validation support
-- `src/hooks/` - Custom React hooks for real-time logging and Supabase integration
+- `src/hooks/` - Custom React hooks for session management and tracking
 - `prisma/` - Database schema and migrations
 
 ## Face Capture Component Architecture
@@ -150,47 +150,36 @@ The system tracks user behavior through four main entities:
 3. **Right Pose**: 30° right turn (yaw > 15°)
 4. **Blink Detection**: EAR < 0.25 threshold
 
-## Real-time Face Detection Logging System
+## Admin Dashboard System
 
 ### Architecture Overview
-The system implements a comprehensive real-time logging solution using Supabase Realtime for live data streaming and efficient batch processing for database operations.
+The system implements a comprehensive admin dashboard for managing tracking sessions, user data, and behavioral analytics with efficient database operations.
 
 ### Core Components
 
-#### 1. Custom React Hooks (`src/hooks/`)
-- **`useSupabaseLogger.ts`** - Core logging hook with batch processing and error handling
-- **`useRealtimeTracking.ts`** - Supabase Realtime integration for live dashboard updates
-- **`useTrackingSession.ts`** - Session management with automatic start/stop functionality
+#### 1. Admin Dashboard Components
+- **`DashboardStats.tsx`** - Dashboard overview with system statistics
+- **`UsersTable.tsx`** - User management interface with comprehensive data
+- **`SessionsList.tsx`** - Session listing with navigation and analytics
+- **`SessionDetail.tsx`** - Detailed session analysis and detection logs
+- **`RealtimeTrackingPlaceholder.tsx`** - Future feature placeholder
 
-#### 2. Batch Processing System
+#### 2. Session Management System
 **Implementation Details:**
-- **5-second intervals**: Optimized batch processing to reduce database load
-- **Queue Management**: In-memory accumulation of detection events before batch insert
-- **Error Handling**: Comprehensive retry logic with exponential backoff
-- **Performance Metrics**: Real-time statistics tracking and aggregation
+- **Session Tracking**: Complete lifecycle management from start to end
+- **User Analytics**: Behavioral pattern analysis with statistical aggregation
+- **Detection Logging**: Real-time event storage with metadata
+- **Performance Metrics**: Session duration and attention rate calculations
 
 **Key Features:**
-- **Efficient Database Operations**: Batched inserts reduce DB connections by 95%
-- **Memory Optimization**: Automatic queue cleanup after successful batch processing
-- **Error Recovery**: Failed batches are retried with increasing delays
-- **Real-time Feedback**: Live statistics update during batch processing
-
-#### 3. Supabase Realtime Integration
-**Live Data Streaming:**
-- **WebSocket Connections**: Real-time updates for dashboard components
-- **Channel Subscriptions**: Filtered data streams for specific tracking sessions
-- **Event Broadcasting**: Live detection events streamed to connected clients
-- **Connection Management**: Automatic reconnection and error handling
-
-**Dashboard Features:**
-- **Live Statistics**: Real-time detection counts and attention metrics
-- **Historical Trends**: Rolling statistics with time-based aggregation
-- **Multi-user Support**: Concurrent session tracking with user isolation
-- **Performance Monitoring**: Connection status and latency tracking
+- **Efficient Database Operations**: Optimized queries with proper indexing
+- **Statistical Analysis**: Real-time aggregation of behavioral data
+- **Data Visualization**: Comprehensive dashboard with analytics
+- **Session Navigation**: Direct access to detailed session information
 
 ### Database Schema Integration
 
-#### Enhanced TrackingLog Model
+#### TrackingLog Model
 ```prisma
 model TrackingLog {
   id              String        @id @default(cuid())
@@ -198,89 +187,51 @@ model TrackingLog {
   detectionType   DetectionType
   confidence      Float?
   timestamp       DateTime      @default(now())
-  metadata        Json?         // Additional detection data
-  batchId         String?       // Batch processing identifier
+  detectionData   Json?         // Detection metadata and analytics
   
   session         TrackingSession @relation(fields: [sessionId], references: [id])
   
   @@index([sessionId, timestamp])
   @@index([detectionType, timestamp])
-  @@index([batchId])
 }
 ```
 
-#### New Detection Types
+#### Detection Types
 ```prisma
 enum DetectionType {
   FACE_DETECTED
-  FACE_LOST
-  LOOKING_AWAY
-  LOOKING_FORWARD
-  LOW_CONFIDENCE
-  HIGH_CONFIDENCE
-  SESSION_START
-  SESSION_END
-  BATCH_PROCESSED
+  FACE_DETECTION_LOSS
+  FACE_ORIENTATION
 }
 ```
 
 ### API Endpoints
 
-#### Real-time Logging Endpoints
-- **`/api/tracking/log`** - Batch insert detection events with validation
-- **`/api/tracking/realtime`** - WebSocket connection management
-- **`/api/tracking/stats/live`** - Real-time statistics aggregation
-- **`/api/tracking/sessions/current`** - Active session management
+#### Admin Management Endpoints
+- **`/api/admin/sessions`** - Session management with statistics
+- **`/api/admin/sessions/[sessionId]/logs`** - Session-specific detection logs
+- **`/api/admin/stats`** - System-wide statistics and analytics
+- **`/api/admin/users`** - User management interface
 
 #### Performance Features
-- **Request Validation**: Schema validation using Zod for all logging requests
-- **Rate Limiting**: Protection against excessive logging requests
-- **Data Compression**: Optimized payload sizes for real-time streaming
-- **Caching**: Strategic caching for frequently accessed statistics
-
-### Implementation Details
-
-#### useSupabaseLogger Hook
-```typescript
-const useSupabaseLogger = () => {
-  // Batch processing with 5-second intervals
-  // Error handling with retry logic
-  // Memory management for detection queue
-  // Real-time statistics calculation
-}
-```
-
-**Key Methods:**
-- `logDetection()` - Add detection event to batch queue
-- `processBatch()` - Execute batch insert with error handling
-- `getStatistics()` - Calculate real-time performance metrics
-- `clearQueue()` - Memory cleanup after successful batch processing
-
-#### Performance Optimizations
-- **Memory Efficiency**: Detection events stored in optimized data structures
-- **Network Optimization**: Compressed JSON payloads for Supabase communication
-- **Database Optimization**: Indexed queries for fast historical data retrieval
-- **Error Recovery**: Robust error handling with automatic retry mechanisms
+- **Request Validation**: Schema validation using Zod for all requests
+- **Database Optimization**: Indexed queries for fast data retrieval
+- **Type Safety**: Complete TypeScript integration
+- **Error Handling**: Comprehensive error recovery and logging
 
 ### Monitoring and Analytics
 
-#### Real-time Metrics
-- **Detection Rate**: Events per second with rolling averages
-- **Attention Score**: Percentage of time looking at screen
-- **Session Duration**: Live tracking of active session time
-- **Error Rates**: Failed detection attempts and recovery statistics
+#### Session Analytics
+- **Detection Counts**: Face detection and orientation tracking
+- **Behavioral Analysis**: Direction-based tracking with duration calculations
+- **Time Aggregation**: Individual and total behavior duration tracking
+- **Statistical Reporting**: Comprehensive session performance metrics
 
-#### Dashboard Integration
-- **Live Charts**: Real-time visualization using Chart.js or similar
-- **Historical Analysis**: Time-series data with configurable date ranges
-- **Multi-session Comparison**: Comparative analytics across different sessions
-- **Export Functionality**: Data export in multiple formats (CSV, JSON, PDF)
-
-### Security and Privacy
-- **Data Encryption**: All logged data encrypted at rest and in transit
-- **User Isolation**: Strict session-based data access controls
-- **Audit Logging**: Comprehensive logging of all system interactions
-- **GDPR Compliance**: Data retention policies and user data deletion capabilities
+#### Dashboard Features
+- **Session Overview**: Complete session listing with statistics
+- **User Management**: Enhanced user interface with phone number display
+- **Detection Visualization**: Real-time log display with metadata
+- **Responsive Design**: Mobile-friendly admin interface
 
 ## Authentication Flow
 
@@ -306,8 +257,6 @@ Use `@/*` alias for imports from `src/` directory (configured in tsconfig.json).
 
 - `DATABASE_URL` - PostgreSQL connection string
 - `DIRECT_URL` - Direct database connection for Prisma
-- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
 - `JWT_SECRET` - Secret key for JWT token signing
 
 ## UI/UX Features
@@ -419,8 +368,8 @@ Use `@/*` alias for imports from `src/` directory (configured in tsconfig.json).
 - ✅ **Sci-Fi Visualization**: 468-point mesh rendering with effects
 - ✅ **Performance Optimization**: 100ms interval processing without lag
 - ✅ **Error Recovery**: Robust fallback systems and logging
-- ✅ **Real-time Database Logging**: Supabase integration with batch processing
-- ✅ **Live Dashboard Streaming**: WebSocket-based real-time updates
+- ✅ **Database Logging**: Efficient detection event storage
+- ✅ **Admin Dashboard**: Complete session management system
 - ✅ **Session Management**: Automatic tracking session lifecycle
 - ✅ **Performance Analytics**: Real-time metrics and attention scoring
 
@@ -547,10 +496,10 @@ Use `@/*` alias for imports from `src/` directory (configured in tsconfig.json).
 **Technical Requirements:**
 - ✅ ใช้ MediaPipe FaceMesh - **IMPLEMENTED**
 - ✅ เก็บ logs ใน database - **IMPLEMENTED** 
-- ✅ Supabase Realtime สำหรับ dashboard - **IMPLEMENTED**
-- ✅ Batch processing ทุก 5 วินาที - **IMPLEMENTED**
-- ✅ Responsive UI พร้อม live stats - **IMPLEMENTED**
-- **Current Focus**: Face Detection accuracy และ performance optimization
+- ✅ Admin dashboard สำหรับ session management - **IMPLEMENTED**
+- ✅ Detection analytics และ statistics - **IMPLEMENTED**
+- ✅ Responsive UI พร้อม comprehensive admin interface - **IMPLEMENTED**
+- **Current Focus**: System optimization และ advanced analytics
 
 ## Latest Implementation Update (Current Session)
 
@@ -661,35 +610,35 @@ Focus on system optimization and additional features:
 - **Real-time Dashboard**: Live monitoring interface (placeholder ready)
 - **Performance Monitoring**: Enhanced system metrics and error tracking
 
-### ✅ **Previous: Real-time Face Detection Logging System (Completed)**
+### ✅ **Previous: MediaPipe Face Tracking System (Completed)**
 
 #### **Implementation Overview**
-Successfully implemented comprehensive real-time logging system with Supabase Realtime integration for live data streaming and efficient batch processing.
+Successfully implemented comprehensive face tracking system with MediaPipe integration for real-time behavioral monitoring and detection logging.
 
 #### **Key Technical Achievements**
 
-**1. Supabase Realtime Integration:**
-- **Live Data Streaming**: Real-time WebSocket connections for dashboard updates
-- **Event Broadcasting**: Live detection events streamed to connected clients
-- **Channel Management**: Filtered data streams for specific tracking sessions
-- **Connection Resilience**: Automatic reconnection and error handling
+**1. MediaPipe Integration:**
+- **Real-time Face Detection**: 100ms interval processing with FaceLandmarker
+- **Face Orientation Tracking**: Looking away detection with threshold algorithms
+- **468-point Landmark Analysis**: Comprehensive facial tracking for behavioral monitoring
+- **Performance Optimization**: Efficient rendering with selective visualization
 
-**2. Batch Processing System:**
-- **5-Second Intervals**: Optimized batch processing to reduce database load by 95%
-- **Queue Management**: In-memory accumulation of detection events
-- **Error Recovery**: Comprehensive retry logic with exponential backoff
-- **Memory Optimization**: Automatic cleanup after successful batch processing
+**2. Detection Logging System:**
+- **Database Integration**: Efficient storage of detection events with metadata
+- **Event Classification**: Face detection, orientation changes, and confidence tracking
+- **Statistical Analysis**: Real-time aggregation of behavioral data
+- **Performance Optimization**: Indexed queries for fast data retrieval
 
-**3. Custom React Hooks:**
-- **`useSupabaseLogger.ts`**: Core logging hook with batch processing and error handling
-- **`useRealtimeTracking.ts`**: Supabase Realtime integration for live updates
-- **`useTrackingSession.ts`**: Session management with automatic start/stop
+**3. Tracking Components:**
+- **`FaceTracker.tsx`**: Main tracking interface with real-time statistics
+- **`MediaPipeDetector`**: Core detection engine with orientation algorithms
+- **Session Management**: Automatic tracking lifecycle management
 
 **4. Enhanced Database Schema:**
-- **Extended DetectionType Enum**: New event types for comprehensive tracking
+- **DetectionType Enum**: Face detection and orientation event types
 - **Optimized Indexes**: Performance-tuned database queries
-- **Batch Identifiers**: Support for batch processing tracking
-- **Metadata Fields**: Flexible JSON storage for additional detection data
+- **Metadata Fields**: Flexible JSON storage for detection data
+- **Session Integration**: Complete tracking session management
 
 <!-- Future Development (Commented Out):
 - **Mouth Movement Detection**: Algorithm preparation complete
