@@ -38,7 +38,13 @@ interface TrackingSession {
 
 interface SessionDetail {
   session: TrackingSession
-  logs: any[]
+  logs: Array<{
+    id: string
+    detectionType: string
+    confidence?: number
+    timestamp: string
+    detectionData?: Record<string, unknown>
+  }>
   stats: {
     totalLogs: number
     faceOrientationCount: number
@@ -67,6 +73,15 @@ interface DashboardStats {
   totalAdmins: number
   totalSessions: number
   activeSessions: number
+  chartData?: BehaviorData[]
+}
+
+interface BehaviorData {
+  behavior: string
+  count: number
+  totalTime: number
+  color: string
+  lightColor: string
 }
 
 export default function AdminDashboard() {
@@ -127,6 +142,8 @@ export default function AdminDashboard() {
 
       if (statsRes.ok) {
         const statsData = await statsRes.json()
+        console.log('Stats data received:', statsData)
+        console.log('Chart data from API:', statsData.chartData)
         setStats(statsData)
       }
 
@@ -248,6 +265,7 @@ export default function AdminDashboard() {
             totalAdmins={stats.totalAdmins}
             totalSessions={stats.totalSessions}
             activeSessions={stats.activeSessions}
+            chartData={stats.chartData}
           />
         )}
 
