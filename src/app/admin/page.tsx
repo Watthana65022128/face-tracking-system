@@ -8,7 +8,7 @@ import { DashboardStats } from '@/app/components/admin/DashboardStats'
 import { UsersTable } from '@/app/components/admin/UsersTable'
 import { SessionsList } from '@/app/components/admin/SessionsList'
 import { SessionDetail } from '@/app/components/admin/SessionDetail'
-import { RealtimeTrackingPlaceholder } from '@/app/components/admin/RealtimeTrackingPlaceholder'
+import RealtimeTracking from '@/app/components/admin/RealtimeTracking'
 
 interface User {
   id: string
@@ -275,7 +275,7 @@ export default function AdminDashboard() {
 
         {/* Real-time Tracking Page */}
         {currentPage === 'realtime' && (
-          <RealtimeTrackingPlaceholder />
+          <RealtimeTracking maxEvents={100} />
         )}
 
 

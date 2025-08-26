@@ -160,6 +160,7 @@ export function useFaceDetection() {
     getCurrentStats,
     getOrientationHistory,
     getFaceDetectionLossStats,
-    getFaceDetectionLossEvents
+    getFaceDetectionLossEvents,
+    detector: detectorRef.current
   }
 }

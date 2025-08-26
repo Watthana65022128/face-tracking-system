@@ -100,6 +100,11 @@ export class MediaPipeDetector {
   private consecutiveLossFrames: number = 0;
   private readonly LOSS_THRESHOLD_FRAMES = 5; // ถือว่า loss เมื่อไม่พบ 5 frames ติด
   
+  // Real-time tracking callbacks
+  private onOrientationChange?: (direction: 'LEFT' | 'RIGHT' | 'UP' | 'DOWN' | 'CENTER', yaw: number, pitch: number, confidence: number) => void;
+  private onFaceDetectionLoss?: (confidence: number) => void;
+  private lastSentDirection: string = '';
+  
   // Thresholds for direction detection
   private readonly YAW_THRESHOLD = 25;
   private readonly PITCH_THRESHOLD = 12;
@@ -190,6 +195,11 @@ export class MediaPipeDetector {
         
         // บันทึก face detection loss
         this.handleFaceDetectionLoss();
+        
+        // ส่งข้อมูล real-time face detection loss
+        if (this.onFaceDetectionLoss) {
+          this.onFaceDetectionLoss(0);
+        }
         
         const noFaceData: FaceTrackingData = {
           isDetected: false,
@@ -362,6 +372,12 @@ export class MediaPipeDetector {
     // บันทึก orientation event หากกำลัง recording
     if (this.isRecording) {
       this.recordOrientationEvent(direction, yaw, pitch);
+    }
+
+    // ส่งข้อมูล real-time หาก callback ถูกตั้งค่าไว้
+    if (this.onOrientationChange && direction !== this.lastSentDirection) {
+      this.onOrientationChange(direction, yaw, pitch, 0.95);
+      this.lastSentDirection = direction;
     }
 
     return { yaw, pitch, isLookingAway, direction };
@@ -669,6 +685,25 @@ export class MediaPipeDetector {
     console.log('🔄 Reset face detection loss statistics');
   }
 
+  // === Real-time Tracking Methods ===
+  
+  setRealtimeCallbacks(
+    onOrientationChange?: (direction: 'LEFT' | 'RIGHT' | 'UP' | 'DOWN' | 'CENTER', yaw: number, pitch: number, confidence: number) => void,
+    onFaceDetectionLoss?: (confidence: number) => void
+  ): void {
+    this.onOrientationChange = onOrientationChange;
+    this.onFaceDetectionLoss = onFaceDetectionLoss;
+    this.lastSentDirection = '';
+    console.log('📡 Real-time tracking callbacks ตั้งค่าเรียบร้อย');
+  }
+  
+  clearRealtimeCallbacks(): void {
+    this.onOrientationChange = undefined;
+    this.onFaceDetectionLoss = undefined;
+    this.lastSentDirection = '';
+    console.log('📡 Real-time tracking callbacks ถูกลบแล้ว');
+  }
+
   destroy(): void {
     if (this.faceLandmarker) {
       this.faceLandmarker = null;
@@ -681,6 +716,9 @@ export class MediaPipeDetector {
     this.calibrationComplete = false;
     this.calibratedNeutralPosition = 0.58;
     
-    console.log('🧹 MediaPipe detector ถูกล้างแล้ว (รวมถึง calibration data)');
+    // Clear real-time callbacks
+    this.clearRealtimeCallbacks();
+    
+    console.log('🧹 MediaPipe detector ถูกล้างแล้ว (รวมถึง calibration data และ real-time callbacks)');
   }
 }

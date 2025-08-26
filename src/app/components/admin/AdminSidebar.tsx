@@ -84,7 +84,7 @@ export function AdminSidebar({ currentPage, onPageChange, onLogoutClick }: Admin
             </svg>
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Admin Panel</h2>
+            <h2 className="text-lg font-bold text-gray-900">Admin</h2>
           </div>
         </div>
       </div>

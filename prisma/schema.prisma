@@ -56,6 +56,7 @@ model TrackingLog {
   detectionType   DetectionType
   detectionData   Json            // Flexible JSON data for different detection types
   confidence      Float?          // Confidence level (0-1)
+  timestamp       DateTime        @default(now())
   
   // Relations
   session         TrackingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -63,6 +64,7 @@ model TrackingLog {
   @@map("tracking_logs")
   @@index([sessionId])
   @@index([detectionType])
+  @@index([timestamp])
 }
 
 enum DetectionType {
