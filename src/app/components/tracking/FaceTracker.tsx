@@ -8,7 +8,6 @@ import { DetectionStats } from './DetectionStats'
 import { ControlPanel } from './ControlPanel'
 import { useCamera } from '@/hooks/useCamera'
 import { useFaceDetection } from '@/hooks/useFaceDetection'
-import { useRealtimeTracking } from '@/hooks/useRealtimeTracking'
 import { drawSciFiFaceMesh, drawStatusInfo } from '@/lib/face-mesh-utils'
 import toast from 'react-hot-toast'
 
@@ -45,32 +44,6 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     detector
   } = useFaceDetection()
 
-  // User info for real-time tracking
-  const [userInfo, setUserInfo] = useState<{ userId: string; userName: string } | null>(null)
-
-  // Real-time tracking hook
-  const realtimeTracking = useRealtimeTracking({
-    sessionId: currentSessionId || '',
-    userId: userInfo?.userId || '',
-    userName: userInfo?.userName || '',
-    isEnabled: !!currentSessionId && !!userInfo
-  })
-
-  // ดึงข้อมูล user เมื่อ component mount
-  useEffect(() => {
-    const userString = localStorage.getItem('user')
-    if (userString) {
-      try {
-        const user = JSON.parse(userString)
-        setUserInfo({
-          userId: user.id,
-          userName: `${user.firstName} ${user.lastName}`
-        })
-      } catch (error) {
-        console.error('Error parsing user data:', error)
-      }
-    }
-  }, [])
 
   // วาดการแสดงผลบน canvas
   const drawDetectionOverlay = useCallback((data: FaceTrackingData) => {
@@ -234,17 +207,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
       
       startDetection(videoRef, drawDetectionOverlay)
       
-      // ตั้งค่า real-time tracking callbacks
-      if (detector) {
-        detector.setRealtimeCallbacks(
-          (direction, yaw, pitch, confidence) => {
-            realtimeTracking.sendOrientationEvent(direction, yaw, pitch, confidence)
-          },
-          (confidence) => {
-            realtimeTracking.sendFaceDetectionLoss(confidence)
-          }
-        )
-      }
+      // Real-time callbacks removed
       
       // เริ่มบันทึกข้อมูลอัตโนมัติ
       setTimeout(() => {

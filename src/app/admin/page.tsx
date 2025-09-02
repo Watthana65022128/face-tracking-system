@@ -8,7 +8,6 @@ import { DashboardStats } from '@/app/components/admin/DashboardStats'
 import { UsersTable } from '@/app/components/admin/UsersTable'
 import { SessionsList } from '@/app/components/admin/SessionsList'
 import { SessionDetail } from '@/app/components/admin/SessionDetail'
-import RealtimeTracking from '@/app/components/admin/RealtimeTracking'
 
 interface User {
   id: string
@@ -291,10 +290,6 @@ export default function AdminDashboard() {
           />
         )}
 
-        {/* Real-time Tracking Page */}
-        {currentPage === 'realtime' && (
-          <RealtimeTracking maxEvents={100} />
-        )}
 
 
         </div>
@@ -317,7 +312,6 @@ function getCurrentPageTitle(page: string): string {
     'overview': 'Dashboard Overview',
     'users': 'User Management',
     'sessions': 'Tracking Sessions',
-    'realtime': 'Real-time Tracking'
   }
   return titles[page] || 'Admin Dashboard'
 }
@@ -327,7 +321,6 @@ function getCurrentPageDescription(page: string): string {
     'overview': 'ภาพรวมสถิติและข้อมูลระบบ',
     'users': 'จัดการผู้ใช้งานและสิทธิ์เข้าถึง',
     'sessions': 'ติดตามเซสชันและสถิติการใช้งาน',
-    'realtime': 'การติดตามแบบเรียลไทม์'
   }
   return descriptions[page] || 'ระบบจัดการสำหรับผู้ดูแลระบบ'
 }
