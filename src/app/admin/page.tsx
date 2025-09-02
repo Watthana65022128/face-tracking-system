@@ -39,8 +39,9 @@ interface AdminSessionDetail {
   session: TrackingSession
   logs: Array<{
     id: string
+    sessionId: string
     detectionType: string
-    confidence?: number
+    confidence: number | null
     timestamp: string
     detectionData?: Record<string, unknown>
   }>

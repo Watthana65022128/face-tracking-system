@@ -40,8 +40,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
     stopRecording,
     getCurrentStats,
     getFaceDetectionLossStats,
-    getFaceDetectionLossEvents,
-    detector
+    getFaceDetectionLossEvents
   } = useFaceDetection()
 
 
@@ -220,7 +219,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
       console.error('❌ เกิดข้อผิดพลาดในการเริ่มต้น:', error)
       alert('MediaPipe ไม่สามารถโหลดได้\nกรุณาตรวจสอบ internet connection\nหรือลอง refresh หน้าเว็บ')
     }
-  }, [initializeCamera, initializeDetector, startDetection, drawDetectionOverlay, startRecording]) // เอา createTrackingSession ออกจาก dependencies
+  }, [initializeCamera, initializeDetector, startDetection, drawDetectionOverlay, startRecording, createTrackingSession])
 
   // ฟังก์ชันส่งข้อมูลไป API
   const saveOrientationData = useCallback(async (sessionId: string, events: unknown[], stats: unknown, faceDetectionLossStats?: { lossCount: number; totalLossTime: number }, faceDetectionLossEvents?: unknown[]) => {
@@ -335,7 +334,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
       }
       alert(`หยุดติดตามแล้ว!\n\nสรุปผลลัพธ์:\n• หันซ้าย: ${statsData?.leftTurns?.count || 0} ครั้ง (${statsData?.leftTurns?.totalDuration || 0} วิ)\n• หันขวา: ${statsData?.rightTurns?.count || 0} ครั้ง (${statsData?.rightTurns?.totalDuration || 0} วิ)\n• ก้มหน้า: ${statsData?.lookingDown?.count || 0} ครั้ง (${statsData?.lookingDown?.totalDuration || 0} วิ)\n• เงยหน้า: ${statsData?.lookingUp?.count || 0} ครั้ง (${statsData?.lookingUp?.totalDuration || 0} วิ)\n• รวม events: ${statsData?.totalEvents || 0} ครั้ง`)
     }
-  }, [stopRecording, getCurrentStats, currentSessionId, saveOrientationData, endTrackingSession])
+  }, [stopRecording, getCurrentStats, currentSessionId, saveOrientationData, endTrackingSession, getFaceDetectionLossStats, getFaceDetectionLossEvents])
 
   // หยุดการติดตาม
   const stopTracking = useCallback(() => {
@@ -370,7 +369,7 @@ export function FaceTracker({ onTrackingStop, sessionName = 'การสอบ'
       hasAutoStarted.current = true
       startTracking()
     }
-  }, []) // ไม่ใส่ dependencies เพื่อให้รันแค่ครั้งเดียว
+  }, [isActive, isLoading, startTracking]) // เพิ่ม dependencies ที่จำเป็น
 
   return (
     <Card className="w-full h-full">

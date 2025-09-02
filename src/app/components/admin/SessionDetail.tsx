@@ -8,9 +8,9 @@ interface TrackingLog {
   id: string
   sessionId: string
   detectionType: string
-  detectionData: any
+  detectionData?: Record<string, unknown>
   confidence: number | null
-  timestamp?: string
+  timestamp: string
 }
 
 interface SessionDetail {
@@ -256,7 +256,7 @@ export function SessionDetail({ sessionDetail, loading, onBackClick }: SessionDe
               {sessionDetail.logs.map((log) => (
                 <tr key={log.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {log.detectionData?.startTime || 'N/A'}
+                    {(log.detectionData?.startTime as string) || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -271,25 +271,25 @@ export function SessionDetail({ sessionDetail, loading, onBackClick }: SessionDe
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {log.detectionData && typeof log.detectionData === 'object' ? (
                       <div className="space-y-1">
-                        {log.detectionData.direction && (
+                        {(log.detectionData.direction as string) && (
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            getDirectionColor(log.detectionData.direction)
+                            getDirectionColor(log.detectionData.direction as string)
                           }`}>
-                            {getDirectionLabel(log.detectionData.direction)}
+                            {getDirectionLabel(log.detectionData.direction as string)}
                           </span>
                         )}
                         <div className="text-xs text-gray-400 mt-1">
-                          {log.detectionData.startTime && log.detectionData.endTime && (
-                            <div>เวลา: {log.detectionData.startTime} - {log.detectionData.endTime}</div>
+                          {(log.detectionData.startTime as string) && (log.detectionData.endTime as string) && (
+                            <div>เวลา: {log.detectionData.startTime as string} - {log.detectionData.endTime as string}</div>
                           )}
-                          {log.detectionData.duration && (
-                            <div>ระยะเวลา: {log.detectionData.duration}s</div>
+                          {(log.detectionData.duration as number) && (
+                            <div>ระยะเวลา: {log.detectionData.duration as number}s</div>
                           )}
-                          {log.detectionData.maxYaw && (
-                            <div>Yaw: {log.detectionData.maxYaw.toFixed(1)}°</div>
+                          {(log.detectionData.maxYaw as number) && (
+                            <div>Yaw: {(log.detectionData.maxYaw as number).toFixed(1)}°</div>
                           )}
-                          {log.detectionData.maxPitch && (
-                            <div>Pitch: {log.detectionData.maxPitch.toFixed(1)}°</div>
+                          {(log.detectionData.maxPitch as number) && (
+                            <div>Pitch: {(log.detectionData.maxPitch as number).toFixed(1)}°</div>
                           )}
                         </div>
                       </div>
