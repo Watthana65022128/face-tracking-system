@@ -35,7 +35,7 @@ interface TrackingSession {
   }
 }
 
-interface SessionDetail {
+interface AdminSessionDetail {
   session: TrackingSession
   logs: Array<{
     id: string
@@ -91,7 +91,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState<string>('overview')
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
-  const [sessionDetail, setSessionDetail] = useState<SessionDetail | null>(null)
+  const [sessionDetail, setSessionDetail] = useState<AdminSessionDetail | null>(null)
   const [sessionDetailLoading, setSessionDetailLoading] = useState(false)
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false)
   const [logoutLoading, setLogoutLoading] = useState(false)
@@ -289,9 +289,6 @@ export default function AdminDashboard() {
             onBackClick={handleBackToSessions}
           />
         )}
-
-
-
         </div>
       </div>
 
