@@ -266,7 +266,7 @@ export function SessionDetail({ sessionDetail, loading, onBackClick }: SessionDe
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {log.confidence ? `${(log.confidence * 100).toFixed(1)}%` : 'N/A'}
+                    {log.confidence ? `${(log.confidence * 100).toFixed(2)}%` : 'N/A'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {log.detectionData && typeof log.detectionData === 'object' ? (
