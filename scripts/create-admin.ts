@@ -16,11 +16,11 @@ async function createAdmin() {
     }
 
     // สร้าง admin user
-    const hashedPassword = await bcrypt.hash('admin123', 12)
+    const hashedPassword = await bcrypt.hash('University@Phayao', 12)
     
     const admin = await prisma.user.create({
       data: {
-        email: 'admin@tracking-system.com',
+        email: 'edtechnology.up@gmail.com',
         password: hashedPassword,
         title: 'นาย',
         firstName: 'Admin',
@@ -34,7 +34,7 @@ async function createAdmin() {
 
     console.log('✅ Admin user created successfully!')
     console.log('📧 Email: admin@tracking-system.com')
-    console.log('🔑 Password: admin123')
+    console.log('🔑 Password: success')
     console.log('👤 ID:', admin.id)
     
   } catch (error) {
